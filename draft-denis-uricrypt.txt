@@ -306,8 +306,8 @@ Table of Contents
 
    9.  If mismatch, return error
 
-   Authentication is critical: any modification to the encrypted data
-   will cause the SIV comparison to fail.
+   Any teampering with the encrypted data will cause the SIV comparison
+   to fail.
 
 4.4.  Padding and Encoding
 
@@ -420,7 +420,7 @@ Table of Contents
 6.1.  TurboSHAKE128 Usage
 
    Implementations MUST use TurboSHAKE128 with a domain separation
-   parameter of 0x06 for all operations.  The TurboSHAKE128 XOF is used
+   parameter of 0x1F for all operations.  The TurboSHAKE128 XOF is used
    for:
 
    *  Generating SIVs from the components hasher
@@ -548,7 +548,7 @@ Table of Contents
            return error("Weak key pattern detected")
 
      // Initialize base hasher
-     base_hasher = TurboSHAKE128(0x06)
+     base_hasher = TurboSHAKE128(0x1F)
 
      // Absorb key and context with length prefixes
      base_hasher.update(uint8(len(secret_key)))
