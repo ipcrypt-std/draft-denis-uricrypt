@@ -220,7 +220,8 @@ character ('/', '?', or '#'). This ensures proper reconstruction during decrypti
 
 ### Path-Only URIs
 
-For URIs without a scheme:
+For absolute paths (URIs starting with '/' but without a scheme), the
+leading '/' is treated as the first component:
 
 ~~~
 Input:  "/a/b/c"
@@ -228,9 +229,10 @@ Input:  "/a/b/c"
 Components:
 
 - Scheme: "" (empty)
-- Component 1: "a/"
-- Component 2: "b/"
-- Component 3: "c"
+- Component 1: "/"
+- Component 2: "a/"
+- Component 3: "b/"
+- Component 4: "c"
 ~~~
 
 For a path with query parameters:
@@ -241,14 +243,15 @@ Input:  "/path/to/file?param=value"
 Components:
 
 - Scheme: "" (empty)
-- Component 1: "path/"
-- Component 2: "to/"
-- Component 3: "file?"
-- Component 4: "param=value"
+- Component 1: "/"
+- Component 2: "path/"
+- Component 3: "to/"
+- Component 4: "file?"
+- Component 5: "param=value"
 ~~~
 
-The leading '/' is not treated as a separate component but is
-implied during reconstruction.
+The leading '/' is explicitly encrypted as a component to maintain
+consistency and enable proper prefix preservation for absolute paths.
 
 ## Component Reconstruction
 
@@ -260,6 +263,13 @@ Components: ["example.com/", "a/", "b/", "c"]
 Reconstructed Path: "example.com/a/b/c"
 
 When combined with the scheme: "https://example.com/a/b/c"
+~~~
+
+For absolute paths without a scheme:
+
+~~~
+Components: ["/", "a/", "b/", "c"]
+Reconstructed Path: "/a/b/c"
 ~~~
 
 # Cryptographic Operations
@@ -549,13 +559,19 @@ Steps:
       - `encrypted_output = encrypted_output concatenated with SIV concatenated with encrypted_part`.
 
 5.  `base64_output = base64url_encode(encrypted_output)`.
-6.  Return `scheme + base64_output`
+6.  If scheme is not empty: Return `scheme + base64_output`
+7.  Else if original URI started with '/': Return `'/' + base64_output`
+8.  Else: Return `base64_output`
 
 ## Decryption Algorithm
 
 Input: secret_key, context, encrypted_uri
 
-Output: decrypted_uri or error
+Output: encrypted_uri
+
+Note: For path-only URIs (those starting with '/'), the output format is:
+- '/' followed by the base64url-encoded encrypted components
+- This preserves the absolute path indicator in the encrypted form or error
 
 Steps:
 
@@ -781,10 +797,13 @@ function extract_components(uri_string):
      scheme = ""
      path = uri_string
 
+  components = []
+
+  // For absolute paths, treat leading "/" as first component
   if path starts with "/":
+     components.append("/")
      path = substring after first "/"
 
-  components = []
   while path is not empty:
      terminator_pos = find_next_terminator(path)
      if terminator_pos found:
@@ -876,8 +895,13 @@ function uricrypt_encrypt(secret_key, context, uri_string):
   // Base64 encode with URL-safe characters and no padding
   base64_output = base64_urlsafe_no_pad_encode(encrypted_output)
 
-  // Return with scheme
-  return scheme + base64_output
+  // Return with appropriate prefix
+  if scheme != "":
+     return scheme + base64_output
+  else if uri_string starts with "/":
+     return "/" + base64_output
+  else:
+     return base64_output
 ~~~
 
 ## Decryption Algorithm
