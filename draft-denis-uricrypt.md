@@ -542,7 +542,7 @@ function uricrypt_encrypt(secret_key, context, uri_string):
       initialize_hashers(secret_key, context)
   if error: return error
 
-  encrypted_output = bytearray()
+  encrypted_output = byte_array()
 
   // Process each component
   for component in components:
@@ -564,7 +564,7 @@ function uricrypt_encrypt(secret_key, context, uri_string):
      keystream = keystream_hasher.squeeze(component_len + padding_len)
 
      // Pad component
-     padded_component = component + bytearray(padding_len)
+     padded_component = component + byte_array(padding_len)
 
      // Encrypt
      encrypted_part = xor_bytes(padded_component, keystream)
