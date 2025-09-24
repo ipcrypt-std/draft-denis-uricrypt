@@ -88,19 +88,19 @@ Table of Contents
      7.7.  Limitations and Trade-offs
    8.  Security Considerations
    9.  IANA Considerations
-   10. Pseudocode
-     10.1.  URI Component Extraction
-     10.2.  Hasher Initialization
-     10.3.  Encryption Algorithm
-     10.4.  Decryption Algorithm
-     10.5.  Padding and Encoding
-   11. Test Vectors
-     11.1.  Test Vector 1: Full URI
-     11.2.  Test Vector 2: Path-Only URI
-     11.3.  Test Vector 3: Multi-Component Path
-     11.4.  Test Vector 4: Root with Scheme
-     11.5.  Test Vector 5: Simple Path
-   12. Normative References
+   10. Normative References
+   Appendix A.  Pseudocode
+     A.1.  URI Component Extraction
+     A.2.  Hasher Initialization
+     A.3.  Encryption Algorithm
+     A.4.  Decryption Algorithm
+     A.5.  Padding and Encoding
+   Appendix B.  Test Vectors
+     B.1.  Test Vector 1: Full URI
+     B.2.  Test Vector 2: Path-Only URI
+     B.3.  Test Vector 3: Multi-Component Path
+     B.4.  Test Vector 4: Root with Scheme
+     B.5.  Test Vector 5: Simple Path
    Author's Address
 
 1.  Introduction
@@ -682,9 +682,41 @@ Table of Contents
 
    This document has no actions for IANA.
 
-10.  Pseudocode
+10.  Normative References
 
-10.1.  URI Component Extraction
+   [I-D.draft-irtf-cfrg-kangarootwelve]
+              Viguier, B., Wong, D., Van Assche, G., Dang, Q., and J.
+              Daemen, "KangarooTwelve and TurboSHAKE", Work in Progress,
+              Internet-Draft, draft-irtf-cfrg-kangarootwelve-17, 21
+              February 2025, <https://datatracker.ietf.org/doc/html/
+              draft-irtf-cfrg-kangarootwelve-17>.
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/rfc/rfc2119>.
+
+   [RFC3986]  Berners-Lee, T., Fielding, R., and L. Masinter, "Uniform
+              Resource Identifier (URI): Generic Syntax", STD 66,
+              RFC 3986, DOI 10.17487/RFC3986, January 2005,
+              <https://www.rfc-editor.org/rfc/rfc3986>.
+
+   [RFC4086]  Eastlake 3rd, D., Schiller, J., and S. Crocker,
+              "Randomness Requirements for Security", BCP 106, RFC 4086,
+              DOI 10.17487/RFC4086, June 2005,
+              <https://www.rfc-editor.org/rfc/rfc4086>.
+
+   [RFC4648]  Josefsson, S., "The Base16, Base32, and Base64 Data
+              Encodings", RFC 4648, DOI 10.17487/RFC4648, October 2006,
+              <https://www.rfc-editor.org/rfc/rfc4648>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+Appendix A.  Pseudocode
+
+A.1.  URI Component Extraction
 
    function extract_components(uri_string):
      if uri_string contains "://":
@@ -710,7 +742,7 @@ Table of Contents
 
      return (scheme, components)
 
-10.2.  Hasher Initialization
+A.2.  Hasher Initialization
 
    function initialize_hashers(secret_key, context):
      // Initialize base hasher
@@ -732,7 +764,7 @@ Table of Contents
 
      return (components_hasher, base_keystream_hasher)
 
-10.3.  Encryption Algorithm
+A.3.  Encryption Algorithm
 
   function uricrypt_encrypt(secret_key, context, uri_string):
     // Extract components
@@ -780,7 +812,7 @@ Table of Contents
     // Return with scheme
     return scheme + base64_output
 
-10.4.  Decryption Algorithm
+A.4.  Decryption Algorithm
 
 function uricrypt_decrypt(secret_key, context, encrypted_uri):
   // Split scheme and base64
@@ -865,7 +897,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
   else:
      return ""
 
-10.5.  Padding and Encoding
+A.5.  Padding and Encoding
 
    function calculate_padding(component_len):
      // Calculate padding needed for base64 encoding alignment
@@ -891,7 +923,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      // Decode
      return standard_base64_decode(encoded)
 
-11.  Test Vectors
+Appendix B.  Test Vectors
 
    These test vectors were generated using the reference Rust
    implementation of URICrypt with TurboSHAKE128.
@@ -900,62 +932,30 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
    secret_key (hex): 0102030405060708090a0b0c0d0e0f10
    context: "test-context"
 
-11.1.  Test Vector 1: Full URI
+B.1.  Test Vector 1: Full URI
 
 Input: "https://example.com/a/b/c"
 Output: "https://HOGo9vauZ3b3xsPNPQng5apSzL5V7QW94C7USgN8mHZJ337AKSWOucUwMuD-uUfF95SsSHCNgBkXUnH1uGll_YtBltXSqKEHNcYJJwbdFdhfWz19"
 
-11.2.  Test Vector 2: Path-Only URI
+B.2.  Test Vector 2: Path-Only URI
 
 Input: "/a/b/c"
 Output: "/b9bCOhqZsvU9XxGOMk6d8QFQhTIdI_xYKpds2lWXpZCms5-az9wtfUft3rec3d9YkUo0N7VcxO5MXfxE5UobvgTJX8UpRdNN"
 
-11.3.  Test Vector 3: Multi-Component Path
+B.3.  Test Vector 3: Multi-Component Path
 
 Input: "https://cdn.example.com/videos/2025/03/file.mp4"
 Output: "https://hxUM2N3txwYjGxjvCpWn30SznxR0v0fDbkSQgCTXCUu7Rq8iSbWP40OvYxKs9zC3kw1JNzAc4Wuj7RZvRd0VUprJWLs5KJPnWsA9Kguxa_J7XviTS3GTqf-XZdPxYyq1Y1MXVE9_4ojHwm6jBDUkVthAkuNe5Cqk_h6d"
 
-11.4.  Test Vector 4: Root with Scheme
+B.4.  Test Vector 4: Root with Scheme
 
    Input: "https://example.com/"
    Output: "https://HOGo9vauZ3b3xsPNPQng5apSzL5V7QW94C7USgN8"
 
-11.5.  Test Vector 5: Simple Path
+B.5.  Test Vector 5: Simple Path
 
 Input: "/path/to/resource"
 Output: "/b9bCOhqZsvU9XxGOMk6d8QFQPTuMlsQKDBhAbc77JvsdRj0kxiFipunATQmmCkNhAe0BPP2EqQoxORElY_ukfUYSrr9mIMfiO9joa3Kn5RS7eSKr"
-
-12.  Normative References
-
-   [I-D.draft-irtf-cfrg-kangarootwelve]
-              Viguier, B., Wong, D., Van Assche, G., Dang, Q., and J.
-              Daemen, "KangarooTwelve and TurboSHAKE", Work in Progress,
-              Internet-Draft, draft-irtf-cfrg-kangarootwelve-17, 21
-              February 2025, <https://datatracker.ietf.org/doc/html/
-              draft-irtf-cfrg-kangarootwelve-17>.
-
-   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
-              Requirement Levels", BCP 14, RFC 2119,
-              DOI 10.17487/RFC2119, March 1997,
-              <https://www.rfc-editor.org/rfc/rfc2119>.
-
-   [RFC3986]  Berners-Lee, T., Fielding, R., and L. Masinter, "Uniform
-              Resource Identifier (URI): Generic Syntax", STD 66,
-              RFC 3986, DOI 10.17487/RFC3986, January 2005,
-              <https://www.rfc-editor.org/rfc/rfc3986>.
-
-   [RFC4086]  Eastlake 3rd, D., Schiller, J., and S. Crocker,
-              "Randomness Requirements for Security", BCP 106, RFC 4086,
-              DOI 10.17487/RFC4086, June 2005,
-              <https://www.rfc-editor.org/rfc/rfc4086>.
-
-   [RFC4648]  Josefsson, S., "The Base16, Base32, and Base64 Data
-              Encodings", RFC 4648, DOI 10.17487/RFC4648, October 2006,
-              <https://www.rfc-editor.org/rfc/rfc4648>.
-
-   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
-              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
-              May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
 
 Author's Address
 
