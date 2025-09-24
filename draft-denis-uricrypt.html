@@ -1786,7 +1786,7 @@ that ensures both confidentiality and authenticity:<a href="#section-4.2-1" clas
             <p id="section-4.2-2.1.1">Update <code>components_xof</code> with the component plaintext<a href="#section-4.2-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-4.2-2.2">
-            <p id="section-4.2-2.2.1">Generate SIV from <code>components_xof</code> (16 bytes)<a href="#section-4.2-2.2.1" class="pilcrow">¶</a></p>
+            <p id="section-4.2-2.2.1">Squeeze the SIV from <code>components_xof</code> (16 bytes). This requires cloning <code>components_xof</code> before reading, as reading may finalize the XOF.<a href="#section-4.2-2.2.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-4.2-2.3">
             <p id="section-4.2-2.3.1">Create <code>keystream_xof</code> by cloning <code>base_keystream_xof</code> and updating it with SIV<a href="#section-4.2-2.3.1" class="pilcrow">¶</a></p>
