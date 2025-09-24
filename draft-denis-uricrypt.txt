@@ -78,19 +78,27 @@ Table of Contents
      6.1.  TurboSHAKE128 Usage
      6.2.  Key and Context Handling
      6.3.  Error Handling
-   7.  Security Considerations
-   8.  IANA Considerations
-   9.  Pseudocode
-     9.1.  URI Component Extraction
-     9.2.  Hasher Initialization
-     9.3.  Encryption Algorithm
-     9.4.  Decryption Algorithm
-     9.5.  Padding and Encoding
-   10. Test Vectors
-     10.1.  Test Vector 1: Full URI
-     10.2.  Test Vector 2: Path-Only URI
-     10.3.  Test Vector 3: Multi-Component Path
-   11. Normative References
+   7.  Security Guarantees
+     7.1.  Confidentiality
+     7.2.  Authenticity and Integrity
+     7.3.  Prefix-Preserving Property
+     7.4.  Domain Separation
+     7.5.  Resistance to Common Attacks
+     7.6.  Security Bounds
+     7.7.  Limitations and Trade-offs
+   8.  Security Considerations
+   9.  IANA Considerations
+   10. Pseudocode
+     10.1.  URI Component Extraction
+     10.2.  Hasher Initialization
+     10.3.  Encryption Algorithm
+     10.4.  Decryption Algorithm
+     10.5.  Padding and Encoding
+   11. Test Vectors
+     11.1.  Test Vector 1: Full URI
+     11.2.  Test Vector 2: Path-Only URI
+     11.3.  Test Vector 3: Multi-Component Path
+   12. Normative References
    Author's Address
 
 1.  Introduction
@@ -464,7 +472,105 @@ Table of Contents
    SIV comparison MUST be performed in constant-time to prevent timing
    attacks.
 
-7.  Security Considerations
+7.  Security Guarantees
+
+   URICrypt provides the following cryptographic security guarantees:
+
+7.1.  Confidentiality
+
+   URICrypt achieves semantic security for URI path components through
+   its use of TurboSHAKE128 as a pseudorandom function.  Each component
+   is encrypted using a unique keystream derived from: - The secret key
+   - The application context - A synthetic initialization vector (SIV)
+   that depends on all preceding components
+
+   This construction ensures that: - An attacker without the secret key
+   cannot recover plaintext components from ciphertexts - The keystream
+   generation is computationally indistinguishable from random for each
+   unique (key, context, path-prefix) tuple - Components are protected
+   by at least 128 bits of security against brute-force attacks
+
+7.2.  Authenticity and Integrity
+
+   Each URI component is authenticated through the SIV mechanism: - The
+   SIV acts as a Message Authentication Code (MAC) computed over the
+   component and all preceding components - Any modification to a
+   component will cause the SIV verification to fail during decryption -
+   The chained construction ensures that reordering, insertion, or
+   deletion of components is detected - Authentication provides 128-bit
+   security against forgery attempts
+
+7.3.  Prefix-Preserving Property
+
+   URICrypt maintains a controlled information leakage pattern: - URIs
+   sharing a common prefix will produce ciphertexts with the same
+   encrypted prefix - This property is deterministic and intentional,
+   enabling systems to perform prefix-based operations - The leakage is
+   limited to prefix structure only - no information about non-matching
+   suffixes is revealed
+
+7.4.  Domain Separation
+
+   The context parameter provides cryptographic domain separation: -
+   Different contexts with the same key produce completely independent
+   ciphertexts - This prevents cross-context attacks where ciphertexts
+   from one application could be used in another - Context binding is
+   cryptographically enforced through the hasher initialization
+
+7.5.  Resistance to Common Attacks
+
+   URICrypt resists several categories of attacks:
+
+   Chosen-Plaintext Attacks (CPA): While deterministic, URICrypt is CPA-
+   secure for unique inputs.  The determinism is a design requirement
+   for prefix preservation.
+
+   Tampering Detection: Any bit flip, truncation, or modification in the
+   ciphertext will be detected with overwhelming probability (1 - 2^-
+   128).
+
+   Length Extension: The use of length-prefixed encoding and domain
+   separation prevents length extension attacks.
+
+   Replay Attacks: Within a single (key, context) pair, replay is
+   possible due to determinism.  Applications requiring replay
+   protection should incorporate timestamps or nonces in the context.
+
+   Key Recovery: TurboSHAKE128’s security properties ensure that
+   observing ciphertexts does not leak information about the secret key.
+
+7.6.  Security Bounds
+
+   The security of URICrypt is bounded by:
+
+   *  Key strength: Minimum 128-bit security with 16-byte keys
+
+   *  Collision resistance: 2^64 birthday bound for SIV collisions
+
+   *  Authentication security: 2^-128 probability of successful forgery
+
+   *  Computational security: Based on TurboSHAKE128’s proven security
+      as an XOF
+
+7.7.  Limitations and Trade-offs
+
+   URICrypt makes specific security trade-offs for functionality:
+
+   *  Deterministic encryption: Same inputs produce same outputs,
+      enabling certain traffic analysis
+
+   *  Length preservation: Component lengths are not hidden, potentially
+      revealing information patterns
+
+   *  Prefix structure leakage: The hierarchical structure of URIs is
+      preserved by design
+
+   These trade-offs are intentional and necessary for the prefix-
+   preserving functionality.  Applications requiring stronger privacy
+   guarantees should evaluate whether URICrypt’s properties align with
+   their threat model.
+
+8.  Security Considerations
 
    URICrypt provides confidentiality and integrity for URI paths while
    preserving prefix relationships.  The security properties depend on:
@@ -501,13 +607,13 @@ Table of Contents
       using the same (key, context) pair for different applications is
       NOT RECOMMENDED.
 
-8.  IANA Considerations
+9.  IANA Considerations
 
    This document has no actions for IANA.
 
-9.  Pseudocode
+10.  Pseudocode
 
-9.1.  URI Component Extraction
+10.1.  URI Component Extraction
 
    function extract_components(uri_string):
      if uri_string contains "://":
@@ -533,7 +639,7 @@ Table of Contents
 
      return (scheme, components)
 
-9.2.  Hasher Initialization
+10.2.  Hasher Initialization
 
    function initialize_hashers(secret_key, context):
      // Validate key length
@@ -566,7 +672,7 @@ Table of Contents
 
      return (components_hasher, base_keystream_hasher)
 
-9.3.  Encryption Algorithm
+10.3.  Encryption Algorithm
 
   function uricrypt_encrypt(secret_key, context, uri_string):
     // Extract components
@@ -614,7 +720,7 @@ Table of Contents
     // Return with scheme
     return scheme + base64_output
 
-9.4.  Decryption Algorithm
+10.4.  Decryption Algorithm
 
 function uricrypt_decrypt(secret_key, context, encrypted_uri):
   // Split scheme and base64
@@ -699,7 +805,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
   else:
      return ""
 
-9.5.  Padding and Encoding
+10.5.  Padding and Encoding
 
    function calculate_padding(component_len):
      return (3 - (16 + component_len) % 3) % 3
@@ -709,8 +815,8 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      encoded = standard_base64_encode(data)
      // Make URL-safe and remove padding
      encoded = encoded.replace('+', '-')
-                    .replace('/', '_')
-                    .rstrip('=')
+                      .replace('/', '_')
+                      .rstrip('=')
      return encoded
 
    function base64_urlsafe_no_pad_decode(encoded):
@@ -720,13 +826,13 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
         encoded = encoded + ('=' * padding)
      // Make standard base64
      encoded = encoded.replace('-', '+')
-                    .replace('_', '/')
+                      .replace('_', '/')
      // Decode
      return standard_base64_decode(encoded)
 
-10.  Test Vectors
+11.  Test Vectors
 
-10.1.  Test Vector 1: Full URI
+11.1.  Test Vector 1: Full URI
 
    Input:
    secret_key: 0x0102030405060708090a0b0c0d0e0f10
@@ -739,7 +845,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
    (Actual test vectors will be generated from a reference
    implementation)
 
-10.2.  Test Vector 2: Path-Only URI
+11.2.  Test Vector 2: Path-Only URI
 
    Input:
    secret_key: 0x0102030405060708090a0b0c0d0e0f10
@@ -749,7 +855,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
    Expected Output:
    "/AbCdEfGhIjKlMnOpQrStUvWxYz"
 
-10.3.  Test Vector 3: Multi-Component Path
+11.3.  Test Vector 3: Multi-Component Path
 
    Input:
    secret_key: 0x0102030405060708090a0b0c0d0e0f10
@@ -759,7 +865,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
    Expected Output:
    "https://AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"
 
-11.  Normative References
+12.  Normative References
 
    [I-D.draft-irtf-cfrg-kangarootwelve]
               Viguier, B., Wong, D., Van Assche, G., Dang, Q., and J.
