@@ -91,9 +91,9 @@ Throughout this document, the following terms and conventions apply:
 
 * URI: Uniform Resource Identifier as defined in {{!RFC3986}}.
 
-* URI Component: A segment of a URI path, typically separated by
-  '/' characters. For encryption purposes, components include the
-  trailing separator except for the final component.
+* URI Component: A segment of a URI path, terminated by '/', '?', or
+  '#' characters. For encryption purposes, components include the
+  trailing terminator except for the final component.
 
 * Scheme: The URI scheme (e.g., "https://") which is preserved in
   plaintext.
@@ -125,7 +125,8 @@ decryption.
 
 Before encryption, a URI must be split into its scheme and path
 components. The path is further divided into individual components for
-chained encryption.
+chained encryption. Components are terminated by '/', '?', or '#'
+characters, which allows proper handling of query strings and fragments.
 
 ### Full URIs
 
@@ -143,8 +144,34 @@ Components:
 - Component 4: "c"
 ~~~
 
-Note that all components except the last include the trailing '/'
-character. This ensures proper reconstruction during decryption.
+For a URI with query parameters:
+
+~~~
+Input:  "https://example.com/path?foo=bar&baz=qux"
+
+Components:
+
+- Scheme: "https://"
+- Component 1: "example.com/"
+- Component 2: "path?"
+- Component 3: "foo=bar&baz=qux"
+~~~
+
+For a URI with a fragment:
+
+~~~
+Input:  "https://example.com/path#section"
+
+Components:
+
+- Scheme: "https://"
+- Component 1: "example.com/"
+- Component 2: "path#"
+- Component 3: "section"
+~~~
+
+Note that all components except the last include the trailing terminator
+character ('/', '?', or '#'). This ensures proper reconstruction during decryption.
 
 ### Path-Only URIs
 
@@ -159,6 +186,20 @@ Components:
 - Component 1: "a/"
 - Component 2: "b/"
 - Component 3: "c"
+~~~
+
+For a path with query parameters:
+
+~~~
+Input:  "/path/to/file?param=value"
+
+Components:
+
+- Scheme: "" (empty)
+- Component 1: "path/"
+- Component 2: "to/"
+- Component 3: "file?"
+- Component 4: "param=value"
 ~~~
 
 The leading '/' is not treated as a separate component but is
@@ -281,7 +322,7 @@ the algorithms:
 
 * `remove_padding(data)`: Removes trailing zero bytes from a byte sequence to recover the original data length.
 
-* `join(components)`: Combines multiple path components into a single path string using '/' as the separator between components.
+* `join(components)`: Combines multiple path components into a single path string, preserving the terminator characters ('/', '?', '#') that are included in each component.
 
 ## Encryption Algorithm
 
@@ -531,10 +572,11 @@ function extract_components(uri_string):
 
   components = []
   while path is not empty:
-     slash_pos = find("/", path)
-     if slash_pos found:
-        component = substring(0, slash_pos + 1)
-        path = substring(slash_pos + 1)
+     // Find the next terminator ('/', '?', or '#')
+     terminator_pos = find_first_of("/", "?", "#", path)
+     if terminator_pos found:
+        component = substring(0, terminator_pos + 1)
+        path = substring(terminator_pos + 1)
         components.append(component)
      else:
         components.append(path)
