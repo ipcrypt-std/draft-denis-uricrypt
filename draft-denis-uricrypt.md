@@ -101,9 +101,12 @@ Throughout this document, the following terms and conventions apply:
 * XOF: Extendable-Output Function, a cryptographic function that can
   produce output of arbitrary length.
 
-* SIV: Synthetic Initialization Vector, a 16-byte value derived
-  from the accumulated state of all previous components, used for
+* SIV: Synthetic Initialization Vector, a value derived from the
+  accumulated state of all previous components, used for
   authentication and as input to keystream generation.
+
+* SIVLEN: The length of the Synthetic Initialization Vector in bytes,
+  defined as 16 bytes (128 bits) for this specification.
 
 * Domain Separation: The practice of using distinct inputs to
   cryptographic functions to ensure outputs for different purposes
@@ -287,7 +290,7 @@ The chained encryption model creates cryptographic dependencies between componen
             | Plaintext absorbed into components_xof
             v
   +-------------------+
-  | SIV1 generation   |------> SIV1 (16 bytes)
+  | SIV1 generation   |------> SIV1 (SIVLEN bytes)
   +-------------------+         |
                                 |
                                 v
@@ -431,7 +434,7 @@ For each component, the encryption process follows a precise sequence
 that ensures both confidentiality and authenticity:
 
 1.  Update `components_xof` with the component plaintext
-2.  Squeeze the SIV from `components_xof` (16 bytes). This requires cloning `components_xof` before reading, as reading may finalize the XOF.
+2.  Squeeze the SIV from `components_xof` (SIVLEN bytes). This requires cloning `components_xof` before reading, as reading may finalize the XOF.
 3.  Create `keystream_xof` by cloning `base_keystream_xof` and updating it with SIV
 4.  Calculate padding needed for base64 encoding
 5.  Generate a keystream of length `(component_length + padding)`
@@ -443,7 +446,7 @@ base64 encoding works with groups of 3 bytes (producing 4 characters), we pad ea
 `(SIV || encrypted_component)` pair to have a length that's a multiple of 3:
 
 ~~~
-total_bytes = 16 (SIV) + component_len
+total_bytes = SIVLEN (SIV) + component_len
 padding_len = (3 - total_bytes % 3) % 3
 ~~~
 
@@ -460,7 +463,7 @@ all previous components, thus enabling the prefix-preserving property.
 
 For each encrypted component, the decryption process is:
 
-1.  Read SIV from input (16 bytes)
+1.  Read SIV from input (SIVLEN bytes)
 2.  Create `keystream_xof` by cloning `base_keystream_xof` and updating it with SIV
 3.  Decrypt bytes incrementally to determine component boundaries:
     - Generate keystream bytes one at a time from the XOF
@@ -493,11 +496,11 @@ encrypted component pair `(SIV || ciphertext)` is padded to be a multiple of 3 b
 This is necessary because base64 encoding processes 3 bytes at a time to produce
 4 characters of output.
 
-The padding calculation `(3 - (16 + component_len) % 3) % 3` ensures the following:
+The padding calculation `(3 - (SIVLEN + component_len) % 3) % 3` ensures the following:
 
-- If `(16 + component_len) % 3 = 0`: no padding needed (already aligned)
-- If `(16 + component_len) % 3 = 1`: add 2 bytes of padding
-- If `(16 + component_len) % 3 = 2`: add 1 byte of padding
+- If `(SIVLEN + component_len) % 3 = 0`: no padding needed (already aligned)
+- If `(SIVLEN + component_len) % 3 = 1`: add 2 bytes of padding
+- If `(SIVLEN + component_len) % 3 = 2`: add 1 byte of padding
 
 The final output is encoded using URL-safe base64 {{!RFC4648}}, with '-' replacing
 '+' and '_' replacing '/' for URI compatibility.
@@ -549,10 +552,10 @@ Steps:
 3.  `encrypted_output = empty byte array`
 4.  For each component:
       - Update `components_xof` with `component`.
-      - `SIV = components_xof.clone().read(16)`.
+      - `SIV = components_xof.clone().read(SIVLEN)`.
       - `keystream_xof = base_keystream_xof.clone()`.
       - `keystream_xof.update(SIV)`.
-      - `padding_len = (3 - (16 + len(component)) % 3) % 3`.
+      - `padding_len = (3 - (SIVLEN + len(component)) % 3) % 3`.
       - `keystream = keystream_xof.read(len(component) + padding_len)`.
       - `padded_component = component concatenated with zeros(padding_len)`.
       - `encrypted_part = padded_component XOR keystream`.
@@ -581,11 +584,11 @@ Steps:
 4.  `decrypted_components = empty list`
 5.  `position = 0`
 6.  While `position < len(decoded)`:
-      - `SIV = decoded[position:position+16]`. If not enough bytes, return `error`.
+      - `SIV = decoded[position:position+SIVLEN]`. If not enough bytes, return `error`.
       - `keystream_xof = base_keystream_xof.clone().update(SIV)`.
-      - `component_start = position + 16`
+      - `component_start = position + SIVLEN`
       - `component = empty byte array`
-      - `position = position + 16`
+      - `position = position + SIVLEN`
       - While `position < len(decoded)`:
         - `decrypted_byte = decoded[position] XOR keystream_xof.read(1)`
         - `position = position + 1`
@@ -593,10 +596,10 @@ Steps:
         - `component.append(decrypted_byte)`
         - If `decrypted_byte` is '/', '?', or '#':
           - `total_len = position - component_start`
-          - `position = position + ((3 - ((16 + total_len) % 3)) % 3)`
+          - `position = position + ((3 - ((SIVLEN + total_len) % 3)) % 3)`
           - Break inner loop
       - Update `components_xof` with `component`.
-      - `expected_SIV = components_xof.clone().read(16)`.
+      - `expected_SIV = components_xof.clone().read(SIVLEN)`.
       - If `constant_time_compare(SIV, expected_SIV) == false`, return `error`.
       - `decrypted_components.append(component)`.
 
@@ -620,7 +623,7 @@ properties needed for this construction.
 
 ## Key and Context Handling
 
-The secret key MUST be at least 16 bytes long. Keys shorter than 16
+The secret key MUST be at least SIVLEN bytes long. Keys shorter than SIVLEN
 bytes MUST be rejected. Implementations SHOULD validate that the key
 does not consist of repeated patterns (e.g., identical first and
 second halves) as a best practice.
@@ -718,7 +721,7 @@ Key Recovery: TurboSHAKE128's security properties ensure that observing cipherte
 
 The security of URICrypt is bounded by the following:
 
-- Key strength: Minimum 128-bit security with 16-byte keys
+- Key strength: Minimum 128-bit security with SIVLEN-byte keys
 - Collision resistance: 2<sup>64</sup> birthday bound for SIV collisions
 - Authentication security: 2<sup>-128</sup> probability of successful forgery
 - Computational security: Based on TurboSHAKE128's proven security as an XOF
@@ -866,8 +869,8 @@ function uricrypt_encrypt(secret_key, context, uri_string):
      // Update components XOF for SIV computation
      components_xof.update(component)
 
-     // Generate 16-byte Synthetic Initialization Vector (SIV)
-     siv = components_xof.squeeze(16)
+     // Generate SIVLEN-byte Synthetic Initialization Vector (SIV)
+     siv = components_xof.squeeze(SIVLEN)
 
      // Create keystream XOF for this component
      keystream_xof = base_keystream_xof.clone()
@@ -877,7 +880,7 @@ function uricrypt_encrypt(secret_key, context, uri_string):
      // The total bytes (SIV + component) must be a multiple of 3
      // to produce clean base64 output without padding characters
      component_len = len(component)
-     padding_len = (3 - (16 + component_len) % 3) % 3
+     padding_len = (3 - (SIVLEN + component_len) % 3) % 3
 
      // Generate keystream
      keystream = keystream_xof.squeeze(component_len + padding_len)
@@ -933,8 +936,8 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
   // Process each component
   while not input_stream.empty():
      // Read SIV
-     siv = input_stream.read(16)
-     if len(siv) != 16:
+     siv = input_stream.read(SIVLEN)
+     if len(siv) != SIVLEN:
         return error("Decryption failed")
 
      // Create keystream XOF
@@ -949,7 +952,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      // Find valid component length by checking padding alignment
      component_data = None
      for possible_len in range(1, remaining + 1):
-        total_len = 16 + possible_len
+        total_len = SIVLEN + possible_len
         padding_len = (3 - total_len % 3) % 3
         if possible_len >= padding_len:
            component_data = input_stream.peek(possible_len)
@@ -966,14 +969,14 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      padded_plaintext = xor_bytes(encrypted_part, keystream)
 
      // Remove padding bytes added for base64 alignment
-     padding_len = (3 - (16 + len(encrypted_part)) % 3) % 3
+     padding_len = (3 - (SIVLEN + len(encrypted_part)) % 3) % 3
      component = padded_plaintext[:-padding_len] if padding_len > 0 else padded_plaintext
 
      // Update XOF with plaintext
      components_xof.update(component)
 
      // Generate expected SIV
-     expected_siv = components_xof.squeeze(16)
+     expected_siv = components_xof.squeeze(SIVLEN)
 
      // Authenticate using constant-time comparison to prevent timing attacks
      if not constant_time_equal(siv, expected_siv):
@@ -996,9 +999,9 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
 ~~~
 function calculate_padding(component_len):
   // Calculate padding needed for base64 encoding alignment
-  // The combined SIV (16 bytes) + component must be divisible by 3
+  // The combined SIV (SIVLEN bytes) + component must be divisible by 3
   // for clean base64 encoding without '=' padding characters
-  total_len = 16 + component_len
+  total_len = SIVLEN + component_len
   return (3 - total_len % 3) % 3
 
 function base64_urlsafe_no_pad_encode(data):
