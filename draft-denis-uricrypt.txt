@@ -147,6 +147,12 @@ Table of Contents
       infrastructure, URICrypt can isolate tenant data while allowing
       shared components to be processed efficiently.
 
+   *  Privacy-Preserving Analytics: URICrypt can complement IPCrypt
+      [I-D.draft-denis-ipcrypt].  Together, they enable systems to
+      perform analytics on encrypted network flows and resource access
+      patterns without exposing sensitive information about either the
+      network endpoints or the specific resources being accessed.
+
 2.  Terminology
 
    The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”,
@@ -683,6 +689,13 @@ Table of Contents
    This document has no actions for IANA.
 
 10.  Normative References
+
+   [I-D.draft-denis-ipcrypt]
+              Denis, F., "Methods for IP Address Encryption and
+              Obfuscation", Work in Progress, Internet-Draft, draft-
+              denis-ipcrypt-12, 19 September 2025,
+              <https://datatracker.ietf.org/doc/html/draft-denis-
+              ipcrypt-12>.
 
    [I-D.draft-irtf-cfrg-kangarootwelve]
               Viguier, B., Wong, D., Van Assche, G., Dang, Q., and J.
