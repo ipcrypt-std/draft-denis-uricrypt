@@ -53,7 +53,7 @@ recover the original URIs, but only with possession of the secret key.
 The main motivations include:
 
 * Access Control in CDNs: Content Delivery Networks often use URI
-  prefixes for routing and access control. URICrypt allows encrypting
+  prefixes for routing and access control. URICrypt allows encryption of
   resource paths while preserving the prefix structure needed for
   CDN operations.
 
@@ -69,11 +69,11 @@ The main motivations include:
   access tokens can use URICrypt to obfuscate the underlying
   resource location while maintaining routability.
 
-* Multi-Tenant Systems: In systems where multiple tenants share
+* Multi-tenant Systems: In systems where multiple tenants share
   infrastructure, URICrypt can isolate tenant data while allowing
   shared components to be processed efficiently.
 
-* Privacy-Preserving Analytics: URICrypt can complement IPCrypt
+* Privacy-preserving Analytics: URICrypt can complement IPCrypt
   {{!I-D.draft-denis-ipcrypt}}. Together, they enable systems to perform
   analytics on encrypted network flows and resource access patterns
   without exposing sensitive information about either the network
@@ -109,7 +109,7 @@ Throughout this document, the following terms and conventions apply:
   cryptographic functions to ensure outputs for different purposes
   are not compatible.
 
-* Prefix-Preserving Encryption: An encryption scheme where if two
+* Prefix-preserving Encryption: An encryption scheme where, if two
   plaintexts share a common prefix, their corresponding ciphertexts
   also share a common (encrypted) prefix.
 
@@ -122,7 +122,7 @@ This section describes how URIs are processed for encryption and
 decryption.
 
 The overall encryption flow transforms a plaintext URI into an encrypted
-URI while preserving the hierarchical structure:
+URI while preserving its hierarchical structure:
 
 ~~~
 +-------------------------------------------------------------+
@@ -215,7 +215,7 @@ Components:
 - Component 3: "section"
 ~~~
 
-Note that all components except the last include the trailing terminator
+Note that all components except the last include their trailing terminator
 character ('/', '?', or '#'). This ensures proper reconstruction during decryption.
 
 ### Path-Only URIs
@@ -264,7 +264,7 @@ When combined with the scheme: "https://example.com/a/b/c"
 
 # Cryptographic Operations
 
-The chained encryption model creates cryptographic dependencies between components and ensures prefix preservation.
+The chained encryption model creates cryptographic dependencies between components, ensuring prefix preservation.
 
 ~~~
   URI: "https://example.com/path/to/resource"
@@ -422,10 +422,10 @@ that ensures both confidentiality and authenticity:
 
 1.  Update `components_xof` with the component plaintext
 2.  Generate SIV from `components_xof` (16 bytes)
-3.  Create `keystream_xof` by cloning `base_keystream_xof` and updating with SIV
+3.  Create `keystream_xof` by cloning `base_keystream_xof` and updating it with SIV
 4.  Calculate padding needed for base64 encoding
-5.  Generate keystream of length `(component_length + padding)`
-6.  XOR padded component with keystream
+5.  Generate a keystream of length `(component_length + padding)`
+6.  XOR the padded component with the keystream
 7.  Output SIV concatenated with `encrypted_component`
 
 The padding ensures clean base64url encoding without padding characters. Since
@@ -444,23 +444,23 @@ This formula calculates:
 Important: The `components_xof` maintains state across all components. After
 generating the SIV for component N, the XOF can be updated with component N+1's
 plaintext. This chaining ensures that each component's encryption depends on
-all previous components, enabling the prefix-preserving property.
+all previous components, thus enabling the prefix-preserving property.
 
 ## Component Decryption
 
 For each encrypted component, the decryption process is:
 
 1.  Read SIV from input (16 bytes)
-2.  Create `keystream_xof` by cloning `base_keystream_xof` and updating with SIV
+2.  Create `keystream_xof` by cloning `base_keystream_xof` and updating it with SIV
 3.  Decrypt bytes incrementally to determine component boundaries:
     - Generate keystream bytes one at a time from the XOF
     - XOR each encrypted byte with its corresponding keystream byte
     - Check each decrypted byte for component terminators ('/', '?', '#')
-    - When a terminator is found, the component is complete
+    - When a terminator is found, the component is complete.
     - Skip any padding bytes (null bytes) after the component
 4.  Update `components_xof` with the complete plaintext component (including terminator)
-5.  Generate expected SIV from `components_xof`
-6.  Compare expected SIV with received SIV (constant-time)
+5.  Generate the expected SIV from `components_xof`
+6.  Compare the expected SIV with the received SIV (constant-time)
 7.  If mismatch, return `error`
 
 ### Component Boundary Detection
@@ -469,7 +469,7 @@ During decryption, component boundaries are discovered dynamically by examining 
 
 - Each component (except possibly the last) ends with a terminator character ('/', '?', or '#')
 - When a terminator is encountered, we know the component is complete
-- After finding the terminator, we skip padding bytes to align to the next 3-byte boundary
+- After finding the terminator, we skip padding bytes to align to the next 3-byte boundary.
 - The padding length can be calculated: `padding = (3 - ((SIV_size + bytes_read) % 3)) % 3`
 
 This approach eliminates the need for explicit length encoding, as the component structure itself provides the necessary boundary information.
@@ -479,11 +479,11 @@ Any tampering with the encrypted data will cause the SIV comparison to fail.
 ## Padding and Encoding
 
 To enable clean base64url encoding without padding characters ('='), each
-encrypted component pair `(SIV || ciphertext)` is padded to a multiple of 3 bytes.
+encrypted component pair `(SIV || ciphertext)` is padded to be a multiple of 3 bytes.
 This is necessary because base64 encoding processes 3 bytes at a time to produce
 4 characters of output.
 
-The padding calculation `(3 - (16 + component_len) % 3) % 3` ensures:
+The padding calculation `(3 - (16 + component_len) % 3) % 3` ensures the following:
 
 - If `(16 + component_len) % 3 = 0`: no padding needed (already aligned)
 - If `(16 + component_len) % 3 = 1`: add 2 bytes of padding
@@ -538,17 +538,17 @@ Steps:
 2.  Initialize XOF instances as described in {{xof-init}}
 3.  `encrypted_output = empty byte array`
 4.  For each component:
-      - `Update components_xof with component`
-      - `SIV = components_xof.clone().read(16)`
-      - `keystream_xof = base_keystream_xof.clone()`
-      - `keystream_xof.update(SIV)`
-      - `padding_len = (3 - (16 + len(component)) % 3) % 3`
-      - `keystream = keystream_xof.read(len(component) + padding_len)`
-      - `padded_component = component concatenated with zeros(padding_len)`
-      - `encrypted_part = padded_component XOR keystream`
-      - `encrypted_output = encrypted_output concatenated with SIV concatenated with encrypted_part`
+      - Update `components_xof` with `component`.
+      - `SIV = components_xof.clone().read(16)`.
+      - `keystream_xof = base_keystream_xof.clone()`.
+      - `keystream_xof.update(SIV)`.
+      - `padding_len = (3 - (16 + len(component)) % 3) % 3`.
+      - `keystream = keystream_xof.read(len(component) + padding_len)`.
+      - `padded_component = component concatenated with zeros(padding_len)`.
+      - `encrypted_part = padded_component XOR keystream`.
+      - `encrypted_output = encrypted_output concatenated with SIV concatenated with encrypted_part`.
 
-5.  `base64_output = base64url_encode(encrypted_output)`
+5.  `base64_output = base64url_encode(encrypted_output)`.
 6.  Return `scheme + base64_output`
 
 ## Decryption Algorithm
@@ -560,13 +560,13 @@ Output: decrypted_uri or error
 Steps:
 
 1.  Split encrypted URI into scheme and base64 part
-2.  `decoded = base64url_decode(base64_part)`. If decoding fails, return `error`
+2.  `decoded = base64url_decode(base64_part)`. If decoding fails, return `error`.
 3.  Initialize XOF instances as described in {{xof-init}}
 4.  `decrypted_components = empty list`
 5.  `position = 0`
 6.  While `position < len(decoded)`:
-      - `SIV = decoded[position:position+16]`. If not enough bytes, return `error`
-      - `keystream_xof = base_keystream_xof.clone().update(SIV)`
+      - `SIV = decoded[position:position+16]`. If not enough bytes, return `error`.
+      - `keystream_xof = base_keystream_xof.clone().update(SIV)`.
       - `component_start = position + 16`
       - `component = empty byte array`
       - `position = position + 16`
@@ -579,12 +579,12 @@ Steps:
           - `total_len = position - component_start`
           - `position = position + ((3 - ((16 + total_len) % 3)) % 3)`
           - Break inner loop
-      - Update `components_xof` with component
-      - `expected_SIV = components_xof.clone().read(16)`
-      - If `constant_time_compare(SIV, expected_SIV) == false`: return `error`
-      - `decrypted_components.append(component)`
+      - Update `components_xof` with `component`.
+      - `expected_SIV = components_xof.clone().read(16)`.
+      - If `constant_time_compare(SIV, expected_SIV) == false`, return `error`.
+      - `decrypted_components.append(component)`.
 
-7.  `decrypted_path = join(decrypted_components)`
+7.  `decrypted_path = join(decrypted_components)`.
 8.  Return `scheme + decrypted_path`
 
 # Implementation Details
@@ -641,7 +641,7 @@ URICrypt provides the following cryptographic security guarantees:
 
 ## Confidentiality
 
-URICrypt achieves semantic security for URI path components through its use of TurboSHAKE128 as a pseudorandom function. Each component is encrypted using a unique keystream derived from:
+URICrypt achieves semantic security for URI path components through its use of TurboSHAKE128 as a pseudorandom function. Each component is encrypted using a unique keystream derived from the following:
 
 - The secret key
 - The application context
@@ -649,58 +649,58 @@ URICrypt achieves semantic security for URI path components through its use of T
 
 This construction ensures that:
 
-- An attacker without the secret key cannot recover plaintext components from ciphertexts
-- The keystream generation is computationally indistinguishable from random for each unique (key, context, path-prefix) tuple
-- Components are protected by at least 128 bits of security against brute-force attacks
+- An attacker without the secret key cannot recover plaintext components from ciphertexts.
+- The keystream generation is computationally indistinguishable from random for each unique (key, context, path-prefix) tuple.
+- Components are protected by at least 128 bits of security against brute-force attacks.
 
 ## Authenticity and Integrity
 
 Each URI component is authenticated through the SIV mechanism:
 
-- The SIV acts as a Message Authentication Code (MAC) computed over the component and all preceding components
-- Any modification to a component will cause the SIV verification to fail during decryption
-- The chained construction ensures that reordering, insertion, or deletion of components is detected
-- Authentication provides 128-bit security against forgery attempts
+- The SIV acts as a Message Authentication Code (MAC) computed over the component and all preceding components.
+- Any modification to a component will cause the SIV verification to fail during decryption.
+- The chained construction ensures that reordering, insertion, or deletion of components is detected.
+- Authentication provides 128-bit security against forgery attempts.
 
 ## Prefix-Preserving Property
 
 URICrypt maintains a controlled information leakage pattern:
 
-- URIs sharing a common prefix will produce ciphertexts with the same encrypted prefix
-- This property is deterministic and intentional, enabling systems to perform prefix-based operations
-- The leakage is limited to prefix structure only - no information about non-matching suffixes is revealed
+- URIs sharing a common prefix will produce ciphertexts with the same encrypted prefix.
+- This property is deterministic and intentional, enabling systems to perform prefix-based operations.
+- The leakage is limited to prefix structure only—no information about non-matching suffixes is revealed.
 
 ## Domain Separation
 
 The context parameter provides cryptographic domain separation:
 
-- Different contexts with the same key produce completely independent ciphertexts
-- This prevents cross-context attacks where ciphertexts from one application could be used in another
-- Context binding is cryptographically enforced through the XOF initialization
+- Different contexts with the same key produce completely independent ciphertexts.
+- This prevents cross-context attacks where ciphertexts from one application could be used in another.
+- Context binding is cryptographically enforced through the XOF initialization.
 
 ## Key Commitment
 
 URICrypt provides full key-commitment security.
 
-The scheme is fully key-committing, meaning that a ciphertext can only be decrypted with the exact key that was used to encrypt it. It is computationally infeasible to find two different keys that can successfully decrypt the same ciphertext to valid plaintexts.
+The scheme is fully key-committing, meaning that a ciphertext can only be decrypted with the exact key that was used to encrypt it. It is computationally infeasible to find two different keys that successfully decrypt the same ciphertext to valid plaintexts.
 
 ## Resistance to Common Attacks
 
 URICrypt resists several categories of attacks:
 
-Chosen-Plaintext Attacks (CPA): While deterministic, URICrypt is CPA-secure for unique inputs. The determinism is a design requirement for prefix preservation.
+Chosen-plaintext Attacks (CPA): While deterministic, URICrypt is CPA-secure for unique inputs. The determinism is a design requirement for prefix preservation.
 
 Tampering Detection: Any bit flip, truncation, or modification in the ciphertext will be detected with overwhelming probability (1 - 2<sup>-128</sup>).
 
-Length Extension: The use of length-prefixed encoding and domain separation prevents length extension attacks.
+Length-extension Attacks: The use of length-prefixed encoding and domain separation prevents length-extension attacks.
 
-Replay Attacks: Within a single (key, context) pair, replay is possible due to determinism. Applications requiring replay protection should incorporate timestamps or nonces in the context.
+Replay Attacks: Within a single (key, context) pair, replay is possible due to determinism. Applications requiring replay protection should incorporate timestamps or nonces into the context.
 
 Key Recovery: TurboSHAKE128's security properties ensure that observing ciphertexts does not leak information about the secret key.
 
 ## Security Bounds
 
-The security of URICrypt is bounded by:
+The security of URICrypt is bounded by the following:
 
 - Key strength: Minimum 128-bit security with 16-byte keys
 - Collision resistance: 2<sup>64</sup> birthday bound for SIV collisions
@@ -709,7 +709,7 @@ The security of URICrypt is bounded by:
 
 ## Limitations and Trade-offs
 
-URICrypt makes specific security trade-offs for functionality:
+URICrypt makes specific security trade-offs for functionality, including the following:
 
 - Deterministic encryption: Same inputs produce same outputs, enabling certain traffic analysis
 - Length preservation: Component lengths are not hidden, potentially revealing information patterns
