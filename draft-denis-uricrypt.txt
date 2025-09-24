@@ -107,9 +107,10 @@ Table of Contents
    URIs sharing common prefixes produce ciphertexts that also share
    common encrypted prefixes.
 
-   The scheme uses TurboSHAKE128 [FIPS202] as its cryptographic
-   primitive and provides authenticated encryption for each component,
-   preventing tampering, reordering, or mixing of encrypted segments.
+   The scheme uses TurboSHAKE128 [I-D.draft-irtf-cfrg-kangarootwelve] as
+   its cryptographic primitive and provides authenticated encryption for
+   each component, preventing tampering, reordering, or mixing of
+   encrypted segments.
 
 1.1.  Use Cases and Motivations
 
@@ -764,6 +765,13 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
               Functions", FIPS PUB 202, August 2015,
               <https://nvlpubs.nist.gov/nistpubs/FIPS/
               NIST.FIPS.202.pdf>.
+
+   [I-D.draft-irtf-cfrg-kangarootwelve]
+              Viguier, B., Wong, D., Van Assche, G., Dang, Q., and J.
+              Daemen, "KangarooTwelve and TurboSHAKE", Work in Progress,
+              Internet-Draft, draft-irtf-cfrg-kangarootwelve-17, 21
+              February 2025, <https://datatracker.ietf.org/doc/html/
+              draft-irtf-cfrg-kangarootwelve-17>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
