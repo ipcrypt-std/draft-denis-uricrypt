@@ -26,6 +26,13 @@ Abstract
    prefix preservation: URIs sharing common path prefixes produce
    ciphertexts that also share common encrypted prefixes.
 
+Discussion Venues
+
+   This note is to be removed before publishing as an RFC.
+
+   Source for this draft and an issue tracker can be found at
+   https://github.com/jedisct1/draft-denis-uricrypt.
+
 Status of This Memo
 
    This Internet-Draft is submitted in full conformance with the
