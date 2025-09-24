@@ -126,21 +126,21 @@ URI while preserving the hierarchical structure:
 
 ~~~
 +-------------------------------------------------------------+
-|                     Input URI                               |
-|         "https://example.com/path/to/resource"              |
+|                         Input URI                           |
+|          "https://example.com/path/to/resource"             |
 +-------------------------------------------------------------+
-                         |
-                         v
+                              |
+                              v
 +-------------------------------------------------------------+
-|                  URI Decomposition                          |
+|                    URI Decomposition                        |
 +-------------------------------------------------------------+
 |  Scheme: "https://"                                         |
 |  Components: ["example.com/", "path/", "to/", "resource"]   |
 +-------------------------------------------------------------+
-                         |
-                         v
+                              |
+                              v
 +-------------------------------------------------------------+
-|               Chained Encryption Process                    |
+|                 Chained Encryption Process                  |
 +-------------------------------------------------------------+
 |  For each component in sequence:                            |
 |    1. Update state with plaintext                           |
@@ -149,20 +149,20 @@ URI while preserving the hierarchical structure:
 |    4. Encrypt component with keystream                      |
 |    5. Output: SIV || encrypted_component                    |
 +-------------------------------------------------------------+
-                         |
-                         v
+                              |
+                              v
 +-------------------------------------------------------------+
-|                 Encoding & Assembly                         |
+|                    Encoding & Assembly                      |
 +-------------------------------------------------------------+
 |  1. Concatenate all (SIV || encrypted_component) pairs      |
 |  2. Apply base64url encoding                                |
 |  3. Prepend original scheme                                 |
 +-------------------------------------------------------------+
-                         |
-                         v
+                              |
+                              v
 +-------------------------------------------------------------+
-|                    Encrypted URI                            |
-|         "https://HOGo9vauZ3b3xsPNPQng5apS..."               |
+|                       Encrypted URI                         |
+|          "https://HOGo9vauZ3b3xsPNPQng5apS..."              |
 +-------------------------------------------------------------+
 ~~~
 
@@ -264,88 +264,86 @@ When combined with the scheme: "https://example.com/a/b/c"
 
 # Cryptographic Operations
 
-URICrypt uses three parallel TurboSHAKE128 {{!I-D.draft-irtf-cfrg-kangarootwelve}} instances for different
-purposes, all initialized from the same base XOF instance.
+URICrypt uses multiple XOFs instances initialized from the same base XOF instance.
 
-The chained encryption model creates cryptographic dependencies between
-components, ensuring prefix preservation:
+The chained encryption model creates cryptographic dependencies between components, and ensures prefix preservation.
 
 ~~~
   URI: "https://example.com/path/to/resource"
 
-  +-----------------+
-  | Component 1:    |
-  | "example.com/"  |
-  +-----------------+
-           |
-           | Plaintext absorbed into components_xof
-           v
-  +-----------------+
-  | SIV1 generation |------> SIV1 (16 bytes)
-  +-----------------+         |
-                              |
-                              v
-                    Encrypt("example.com/")
-                              |
-                              v
-                    Output1 = SIV1 || Ciphertext1
-           |
-           | State carries forward
-           v
-  +-----------------+
-  | Component 2:    |
-  | "path/"         |
-  +-----------------+
-           |
-           | Plaintext absorbed (includes Component 1 state)
-           v
-  +-----------------+
-  | SIV2 generation |------> SIV2 (depends on 1)
-  +-----------------+         |
-                              |
-                              v
-                    Encrypt("path/")
-                              |
-                              v
-                    Output2 = SIV2 || Ciphertext2
-           |
-           | State carries forward
-           v
-  +-----------------+
-  | Component 3:    |
-  | "to/"           |
-  +-----------------+
-           |
-           | Plaintext absorbed (includes 1 + 2 state)
-           v
-  +-----------------+
-  | SIV3 generation |------> SIV3 (depends on 1, 2)
-  +-----------------+         |
-                              |
-                              v
-                    Encrypt("to/")
-                              |
-                              v
-                    Output3 = SIV3 || Ciphertext3
-           |
-           | State carries forward
-           v
-  +-----------------+
-  | Component 4:    |
-  | "resource"      |
-  +-----------------+
-           |
-           | Plaintext absorbed (includes 1 + 2 + 3 state)
-           v
-  +-----------------+
-  | SIV4 generation |------> SIV4 (depends on 1, 2, 3)
-  +-----------------+         |
-                              |
-                              v
-                    Encrypt("resource")
-                              |
-                              v
-                    Output4 = SIV4 || Ciphertext4
+  +-------------------+
+  |   Component 1:    |
+  |  "example.com/"   |
+  +-------------------+
+            |
+            | Plaintext absorbed into components_xof
+            v
+  +-------------------+
+  | SIV1 generation   |------> SIV1 (16 bytes)
+  +-------------------+         |
+                                |
+                                v
+                      Encrypt("example.com/")
+                                |
+                                v
+                      Output1 = SIV1 || Ciphertext1
+            |
+            | State carries forward
+            v
+  +-------------------+
+  |   Component 2:    |
+  |     "path/"       |
+  +-------------------+
+            |
+            | Plaintext absorbed (includes Component 1 state)
+            v
+  +-------------------+
+  | SIV2 generation   |------> SIV2 (depends on 1)
+  +-------------------+         |
+                                |
+                                v
+                      Encrypt("path/")
+                                |
+                                v
+                      Output2 = SIV2 || Ciphertext2
+            |
+            | State carries forward
+            v
+  +-------------------+
+  |   Component 3:    |
+  |      "to/"        |
+  +-------------------+
+            |
+            | Plaintext absorbed (includes 1 + 2 state)
+            v
+  +-------------------+
+  | SIV3 generation   |------> SIV3 (depends on 1, 2)
+  +-------------------+         |
+                                |
+                                v
+                      Encrypt("to/")
+                                |
+                                v
+                      Output3 = SIV3 || Ciphertext3
+            |
+            | State carries forward
+            v
+  +-------------------+
+  |   Component 4:    |
+  |    "resource"     |
+  +-------------------+
+            |
+            | Plaintext absorbed (includes 1 + 2 + 3 state)
+            v
+  +-------------------+
+  | SIV4 generation   |------> SIV4 (depends on 1, 2, 3)
+  +-------------------+         |
+                                |
+                                v
+                      Encrypt("resource")
+                                |
+                                v
+                      Output4 = SIV4 || Ciphertext4
 
   Final Output: Output1 || Output2 || Output3 || Output4
 ~~~
@@ -368,32 +366,32 @@ Two XOF instances are derived from the base XOF:
 ~~~
   Input: len(key) || key || len(context) || context
 
-  +----------------------------------------------------+
-  | base_xof = TurboSHAKE128(domain_sep=0x1F)          |
-  | base_xof.update(len(secret_key))                   |
-  | base_xof.update(secret_key)                        |
-  | base_xof.update(len(context))                      |
-  | base_xof.update(context)                           |
-  +----------------------------------------------------+
-                           |
-                           v
-              +------------------------+
-              |    Clone Base State    |
-              +------------------------+
-                           |
-          +----------------+----------------+
-          v                                 v
-  +------------------+            +------------------+
-  |  Components XOF  |            |Base Keystream XOF|
-  +------------------+            +------------------+
-  |   update("IV")   |            |   update("KS")   |
-  +------------------+            +------------------+
-          |                                 |
-          |                                 |
-          v                                 v
-  For SIV Generation               For Keystream Base
-  (Updated with each               (Cloned for each
-   component plaintext)             component's keystream)
+  +------------------------------------------------------+
+  | base_xof = TurboSHAKE128(domain_sep=0x1F)           |
+  | base_xof.update(len(secret_key))                    |
+  | base_xof.update(secret_key)                         |
+  | base_xof.update(len(context))                       |
+  | base_xof.update(context)                            |
+  +------------------------------------------------------+
+                            |
+                            v
+               +------------------------+
+               |   Clone Base State     |
+               +------------------------+
+                            |
+           +----------------+----------------+
+           v                                 v
+  +--------------------+          +--------------------+
+  |  Components XOF    |          | Base Keystream XOF |
+  +--------------------+          +--------------------+
+  |   update("IV")     |          |   update("KS")     |
+  +--------------------+          +--------------------+
+           |                                 |
+           |                                 |
+           v                                 v
+   For SIV Generation              For Keystream Base
+   (Updated with each              (Cloned for each
+    component plaintext)            component's keystream)
 ~~~
 
 The initialization process is:
