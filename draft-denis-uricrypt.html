@@ -1234,7 +1234,7 @@ reordering, or mixing of encrypted segments.<a href="#section-abstract-1" class=
                 <p id="section-toc.1-1.7.2.4.1"><a href="#section-7.4" class="auto internal xref">7.4</a>.  <a href="#name-domain-separation" class="internal xref">Domain Separation</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.5">
-                <p id="section-toc.1-1.7.2.5.1"><a href="#section-7.5" class="auto internal xref">7.5</a>.  <a href="#name-key-committing-property" class="internal xref">Key-Committing Property</a></p>
+                <p id="section-toc.1-1.7.2.5.1"><a href="#section-7.5" class="auto internal xref">7.5</a>.  <a href="#name-key-commitment" class="internal xref">Key Commitment</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.6">
                 <p id="section-toc.1-1.7.2.6.1"><a href="#section-7.6" class="auto internal xref">7.6</a>.  <a href="#name-resistance-to-common-attack" class="internal xref">Resistance to Common Attacks</a></p>
@@ -1978,26 +1978,13 @@ attacks.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
         </ul>
 </section>
 </div>
-<div id="key-committing-property">
+<div id="key-commitment">
 <section id="section-7.5">
-        <h3 id="name-key-committing-property">
-<a href="#section-7.5" class="section-number selfRef">7.5. </a><a href="#name-key-committing-property" class="section-name selfRef">Key-Committing Property</a>
+        <h3 id="name-key-commitment">
+<a href="#section-7.5" class="section-number selfRef">7.5. </a><a href="#name-key-commitment" class="section-name selfRef">Key Commitment</a>
         </h3>
 <p id="section-7.5-1">URICrypt provides full key-commitment security:<a href="#section-7.5-1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-7.5-2.1">
-            <p id="section-7.5-2.1.1">The scheme is fully key-committing, meaning that a ciphertext can only be correctly decrypted with the exact key that was used to encrypt it<a href="#section-7.5-2.1.1" class="pilcrow">¶</a></p>
-</li>
-          <li class="normal" id="section-7.5-2.2">
-            <p id="section-7.5-2.2.1">It is computationally infeasible to find two different keys that can successfully decrypt the same ciphertext to valid plaintexts<a href="#section-7.5-2.2.1" class="pilcrow">¶</a></p>
-</li>
-          <li class="normal" id="section-7.5-2.3">
-            <p id="section-7.5-2.3.1">This property is achieved through the SIV authentication mechanism, which binds the ciphertext to the specific key used during encryption<a href="#section-7.5-2.3.1" class="pilcrow">¶</a></p>
-</li>
-          <li class="normal" id="section-7.5-2.4">
-            <p id="section-7.5-2.4.1">Key commitment prevents attacks where an adversary could create ambiguous ciphertexts that decrypt differently under different keys<a href="#section-7.5-2.4.1" class="pilcrow">¶</a></p>
-</li>
-        </ul>
+<p id="section-7.5-2">The scheme is fully key-committing, meaning that a ciphertext can only be decrypted with the exact key that was used to encrypt it. It is computationally infeasible to find two different keys that can successfully decrypt the same ciphertext to valid plaintexts<a href="#section-7.5-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="resistance-to-common-attacks">
