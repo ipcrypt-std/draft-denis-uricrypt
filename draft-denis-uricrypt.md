@@ -484,6 +484,7 @@ This is necessary because base64 encoding processes 3 bytes at a time to produce
 4 characters of output.
 
 The padding calculation `(3 - (16 + component_len) % 3) % 3` ensures:
+
 - If `(16 + component_len) % 3 = 0`: no padding needed (already aligned)
 - If `(16 + component_len) % 3 = 1`: add 2 bytes of padding
 - If `(16 + component_len) % 3 = 2`: add 1 byte of padding
