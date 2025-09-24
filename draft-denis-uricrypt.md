@@ -245,7 +245,7 @@ Each encrypted component `(SIV || ciphertext)` is padded to make its
 length a multiple of 3 bytes, enabling clean base64 encoding without
 padding characters.
 
-The final output is encoded using URL-safe base64 {{!RFC4648}} without padding.
+The final output is encoded using URL-safe base64 {{!RFC4648}}.
 
 # Algorithm Specification
 
