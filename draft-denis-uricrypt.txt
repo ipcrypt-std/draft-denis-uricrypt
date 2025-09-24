@@ -955,18 +955,22 @@ Appendix B.  Test Vectors
 
 B.1.  Test Vector 1: Full URI
 
-Input: "https://example.com/a/b/c"
-Output: "https://HOGo9vauZ3b3xsPNPQng5apSzL5V7QW94C7USgN8mHZJ337AKSWOucUwMuD-uUfF95SsSHCNgBkXUnH1uGll_YtBltXSqKEHNcYJJwbdFdhfWz19"
+  Input: "https://example.com/a/b/c"
+  Output: "https://HOGo9vauZ3b3xsPNPQng5apSzL5V7QW94C7USgN8mHZJ337AKSWOu
+           cUwMuD-uUfF95SsSHCNgBkXUnH1uGll_YtBltXSqKEHNcYJJwbdFdhfWz19"
 
 B.2.  Test Vector 2: Path-Only URI
 
-Input: "/a/b/c"
-Output: "/b9bCOhqZsvU9XxGOMk6d8QFQhTIdI_xYKpds2lWXpZCms5-az9wtfUft3rec3d9YkUo0N7VcxO5MXfxE5UobvgTJX8UpRdNN"
+  Input: "/a/b/c"
+  Output: "/b9bCOhqZsvU9XxGOMk6d8QFQhTIdI_xYKpds2lWXpZCms5-az9wtfUft3rec
+           3d9YkUo0N7VcxO5MXfxE5UobvgTJX8UpRdNN"
 
 B.3.  Test Vector 3: Multi-Component Path
 
-Input: "https://cdn.example.com/videos/2025/03/file.mp4"
-Output: "https://hxUM2N3txwYjGxjvCpWn30SznxR0v0fDbkSQgCTXCUu7Rq8iSbWP40OvYxKs9zC3kw1JNzAc4Wuj7RZvRd0VUprJWLs5KJPnWsA9Kguxa_J7XviTS3GTqf-XZdPxYyq1Y1MXVE9_4ojHwm6jBDUkVthAkuNe5Cqk_h6d"
+ Input: "https://cdn.example.com/videos/2025/03/file.mp4"
+ Output: "https://hxUM2N3txwYjGxjvCpWn30SznxR0v0fDbkSQgCTXCUu7Rq8iSbWP4
+          0OvYxKs9zC3kw1JNzAc4Wuj7RZvRd0VUprJWLs5KJPnWsA9Kguxa_J7XviTS3G
+          Tqf-XZdPxYyq1Y1MXVE9_4ojHwm6jBDUkVthAkuNe5Cqk_h6d"
 
 B.4.  Test Vector 4: Root with Scheme
 
@@ -975,8 +979,9 @@ B.4.  Test Vector 4: Root with Scheme
 
 B.5.  Test Vector 5: Simple Path
 
-Input: "/path/to/resource"
-Output: "/b9bCOhqZsvU9XxGOMk6d8QFQPTuMlsQKDBhAbc77JvsdRj0kxiFipunATQmmCkNhAe0BPP2EqQoxORElY_ukfUYSrr9mIMfiO9joa3Kn5RS7eSKr"
+  Input: "/path/to/resource"
+  Output: "/b9bCOhqZsvU9XxGOMk6d8QFQPTuMlsQKDBhAbc77JvsdRj0kxiFipunATQmm
+           CkNhAe0BPP2EqQoxORElY_ukfUYSrr9mIMfiO9joa3Kn5RS7eSKr"
 
 Author's Address
 
