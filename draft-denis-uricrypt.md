@@ -71,6 +71,12 @@ The main motivations include:
   infrastructure, URICrypt can isolate tenant data while allowing
   shared components to be processed efficiently.
 
+* Privacy-Preserving Analytics: URICrypt can complement IPCrypt
+  {{!I-D.draft-denis-ipcrypt}}. Together, they enable systems to perform
+  analytics on encrypted network flows and resource access patterns
+  without exposing sensitive information about either the network
+  endpoints or the specific resources being accessed.
+
 # Terminology
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
