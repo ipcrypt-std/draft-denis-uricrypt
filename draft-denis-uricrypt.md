@@ -549,8 +549,14 @@ but only with knowledge of the secret key. The security properties depend on:
   NOT RECOMMENDED.
 
 # IANA Considerations
+{:numbered="false"}
 
 This document has no actions for IANA.
+
+# Acknowledgments
+{:numbered="false"}
+
+The author would like to thank Maciej Soltysiak for highlighting the importance of properly supporting query parameters and fragments in URI encryption.
 
 --- back
 
