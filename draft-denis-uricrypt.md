@@ -52,7 +52,7 @@ cryptographically on all preceding components. This ensures that URIs
 sharing common prefixes produce ciphertexts that also share common
 encrypted prefixes.
 
-The scheme uses TurboSHAKE128 {{!I-D.draft-irtf-cfrg-kangarootwelve}} as its cryptographic primitive
+The scheme uses an extendable-output function (XOF) as its cryptographic primitive
 and provides authenticated encryption for each component, preventing
 tampering, reordering, or mixing of encrypted segments.
 
@@ -180,7 +180,7 @@ When combined with the scheme: "https://example.com/a/b/c"
 
 # Cryptographic Operations
 
-URICrypt uses three parallel TurboSHAKE128 instances for different
+URICrypt uses three parallel TurboSHAKE128 {{!I-D.draft-irtf-cfrg-kangarootwelve}} instances for different
 purposes, all initialized from the same base hasher.
 
 ## Hasher Initialization {#hasher-init}
