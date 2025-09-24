@@ -1550,7 +1550,8 @@ character (‘/’, ‘?’, or ‘#’). This ensures proper reconstruction dur
           <h4 id="name-path-only-uris">
 <a href="#section-3.1.2" class="section-number selfRef">3.1.2. </a><a href="#name-path-only-uris" class="section-name selfRef">Path-Only URIs</a>
           </h4>
-<p id="section-3.1.2-1">For URIs without a scheme:<a href="#section-3.1.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.1.2-1">For absolute paths (URIs starting with ‘/’ but without a scheme), the
+leading ‘/’ is treated as the first component:<a href="#section-3.1.2-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3.1.2-2">
 <pre>
 Input:  "/a/b/c"
@@ -1558,9 +1559,10 @@ Input:  "/a/b/c"
 Components:
 
 - Scheme: "" (empty)
-- Component 1: "a/"
-- Component 2: "b/"
-- Component 3: "c"
+- Component 1: "/"
+- Component 2: "a/"
+- Component 3: "b/"
+- Component 4: "c"
 </pre><a href="#section-3.1.2-2" class="pilcrow">¶</a>
 </div>
 <p id="section-3.1.2-3">For a path with query parameters:<a href="#section-3.1.2-3" class="pilcrow">¶</a></p>
@@ -1571,14 +1573,15 @@ Input:  "/path/to/file?param=value"
 Components:
 
 - Scheme: "" (empty)
-- Component 1: "path/"
-- Component 2: "to/"
-- Component 3: "file?"
-- Component 4: "param=value"
+- Component 1: "/"
+- Component 2: "path/"
+- Component 3: "to/"
+- Component 4: "file?"
+- Component 5: "param=value"
 </pre><a href="#section-3.1.2-4" class="pilcrow">¶</a>
 </div>
-<p id="section-3.1.2-5">The leading ‘/’ is not treated as a separate component but is
-implied during reconstruction.<a href="#section-3.1.2-5" class="pilcrow">¶</a></p>
+<p id="section-3.1.2-5">The leading ‘/’ is explicitly encrypted as a component to maintain
+consistency and enable proper prefix preservation for absolute paths.<a href="#section-3.1.2-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1597,6 +1600,13 @@ Reconstructed Path: "example.com/a/b/c"
 
 When combined with the scheme: "https://example.com/a/b/c"
 </pre><a href="#section-3.2-2" class="pilcrow">¶</a>
+</div>
+<p id="section-3.2-3">For absolute paths without a scheme:<a href="#section-3.2-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.2-4">
+<pre>
+Components: ["/", "a/", "b/", "c"]
+Reconstructed Path: "/a/b/c"
+</pre><a href="#section-3.2-4" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
@@ -2017,7 +2027,13 @@ the algorithms:<a href="#section-5-1" class="pilcrow">¶</a></p>
             <p id="section-5.1-4.5.1"><code>base64_output = base64url_encode(encrypted_output)</code>.<a href="#section-5.1-4.5.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-5.1-4.6">
-            <p id="section-5.1-4.6.1">Return <code>scheme + base64_output</code><a href="#section-5.1-4.6.1" class="pilcrow">¶</a></p>
+            <p id="section-5.1-4.6.1">If scheme is not empty: Return <code>scheme + base64_output</code><a href="#section-5.1-4.6.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.1-4.7">
+            <p id="section-5.1-4.7.1">Else if original URI started with ‘/’: Return <code>'/' + base64_output</code><a href="#section-5.1-4.7.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.1-4.8">
+            <p id="section-5.1-4.8.1">Else: Return <code>base64_output</code><a href="#section-5.1-4.8.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
 </section>
@@ -2028,92 +2044,95 @@ the algorithms:<a href="#section-5-1" class="pilcrow">¶</a></p>
 <a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-decryption-algorithm" class="section-name selfRef">Decryption Algorithm</a>
         </h3>
 <p id="section-5.2-1">Input: secret_key, context, encrypted_uri<a href="#section-5.2-1" class="pilcrow">¶</a></p>
-<p id="section-5.2-2">Output: decrypted_uri or error<a href="#section-5.2-2" class="pilcrow">¶</a></p>
-<p id="section-5.2-3">Steps:<a href="#section-5.2-3" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-5.2-4">
-<li id="section-5.2-4.1">
-            <p id="section-5.2-4.1.1">Split encrypted URI into scheme and base64 part<a href="#section-5.2-4.1.1" class="pilcrow">¶</a></p>
+<p id="section-5.2-2">Output: encrypted_uri<a href="#section-5.2-2" class="pilcrow">¶</a></p>
+<p id="section-5.2-3">Note: For path-only URIs (those starting with ‘/’), the output format is:
+- ‘/’ followed by the base64url-encoded encrypted components
+- This preserves the absolute path indicator in the encrypted form or error<a href="#section-5.2-3" class="pilcrow">¶</a></p>
+<p id="section-5.2-4">Steps:<a href="#section-5.2-4" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-5.2-5">
+<li id="section-5.2-5.1">
+            <p id="section-5.2-5.1.1">Split encrypted URI into scheme and base64 part<a href="#section-5.2-5.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li id="section-5.2-4.2">
-            <p id="section-5.2-4.2.1"><code>decoded = base64url_decode(base64_part)</code>. If decoding fails, return <code>error</code>.<a href="#section-5.2-4.2.1" class="pilcrow">¶</a></p>
+          <li id="section-5.2-5.2">
+            <p id="section-5.2-5.2.1"><code>decoded = base64url_decode(base64_part)</code>. If decoding fails, return <code>error</code>.<a href="#section-5.2-5.2.1" class="pilcrow">¶</a></p>
 </li>
-          <li id="section-5.2-4.3">
-            <p id="section-5.2-4.3.1">Initialize XOF instances as described in <a href="#xof-init" class="auto internal xref">Section 4.1</a><a href="#section-5.2-4.3.1" class="pilcrow">¶</a></p>
+          <li id="section-5.2-5.3">
+            <p id="section-5.2-5.3.1">Initialize XOF instances as described in <a href="#xof-init" class="auto internal xref">Section 4.1</a><a href="#section-5.2-5.3.1" class="pilcrow">¶</a></p>
 </li>
-          <li id="section-5.2-4.4">
-            <p id="section-5.2-4.4.1"><code>decrypted_components = empty list</code><a href="#section-5.2-4.4.1" class="pilcrow">¶</a></p>
+          <li id="section-5.2-5.4">
+            <p id="section-5.2-5.4.1"><code>decrypted_components = empty list</code><a href="#section-5.2-5.4.1" class="pilcrow">¶</a></p>
 </li>
-          <li id="section-5.2-4.5">
-            <p id="section-5.2-4.5.1"><code>position = 0</code><a href="#section-5.2-4.5.1" class="pilcrow">¶</a></p>
+          <li id="section-5.2-5.5">
+            <p id="section-5.2-5.5.1"><code>position = 0</code><a href="#section-5.2-5.5.1" class="pilcrow">¶</a></p>
 </li>
-          <li id="section-5.2-4.6">
-            <p id="section-5.2-4.6.1">While <code>position &lt; len(decoded)</code>:<a href="#section-5.2-4.6.1" class="pilcrow">¶</a></p>
+          <li id="section-5.2-5.6">
+            <p id="section-5.2-5.6.1">While <code>position &lt; len(decoded)</code>:<a href="#section-5.2-5.6.1" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-5.2-4.6.2.1">
-                <p id="section-5.2-4.6.2.1.1"><code>SIV = decoded[position:position+16]</code>. If not enough bytes, return <code>error</code>.<a href="#section-5.2-4.6.2.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-5.2-5.6.2.1">
+                <p id="section-5.2-5.6.2.1.1"><code>SIV = decoded[position:position+16]</code>. If not enough bytes, return <code>error</code>.<a href="#section-5.2-5.6.2.1.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-5.2-4.6.2.2">
-                <p id="section-5.2-4.6.2.2.1"><code>keystream_xof = base_keystream_xof.clone().update(SIV)</code>.<a href="#section-5.2-4.6.2.2.1" class="pilcrow">¶</a></p>
+              <li class="normal" id="section-5.2-5.6.2.2">
+                <p id="section-5.2-5.6.2.2.1"><code>keystream_xof = base_keystream_xof.clone().update(SIV)</code>.<a href="#section-5.2-5.6.2.2.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-5.2-4.6.2.3">
-                <p id="section-5.2-4.6.2.3.1"><code>component_start = position + 16</code><a href="#section-5.2-4.6.2.3.1" class="pilcrow">¶</a></p>
+              <li class="normal" id="section-5.2-5.6.2.3">
+                <p id="section-5.2-5.6.2.3.1"><code>component_start = position + 16</code><a href="#section-5.2-5.6.2.3.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-5.2-4.6.2.4">
-                <p id="section-5.2-4.6.2.4.1"><code>component = empty byte array</code><a href="#section-5.2-4.6.2.4.1" class="pilcrow">¶</a></p>
+              <li class="normal" id="section-5.2-5.6.2.4">
+                <p id="section-5.2-5.6.2.4.1"><code>component = empty byte array</code><a href="#section-5.2-5.6.2.4.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-5.2-4.6.2.5">
-                <p id="section-5.2-4.6.2.5.1"><code>position = position + 16</code><a href="#section-5.2-4.6.2.5.1" class="pilcrow">¶</a></p>
+              <li class="normal" id="section-5.2-5.6.2.5">
+                <p id="section-5.2-5.6.2.5.1"><code>position = position + 16</code><a href="#section-5.2-5.6.2.5.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-5.2-4.6.2.6">
-                <p id="section-5.2-4.6.2.6.1">While <code>position &lt; len(decoded)</code>:<a href="#section-5.2-4.6.2.6.1" class="pilcrow">¶</a></p>
+              <li class="normal" id="section-5.2-5.6.2.6">
+                <p id="section-5.2-5.6.2.6.1">While <code>position &lt; len(decoded)</code>:<a href="#section-5.2-5.6.2.6.1" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-5.2-4.6.2.6.2.1">
-                    <p id="section-5.2-4.6.2.6.2.1.1"><code>decrypted_byte = decoded[position] XOR keystream_xof.read(1)</code><a href="#section-5.2-4.6.2.6.2.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-5.2-5.6.2.6.2.1">
+                    <p id="section-5.2-5.6.2.6.2.1.1"><code>decrypted_byte = decoded[position] XOR keystream_xof.read(1)</code><a href="#section-5.2-5.6.2.6.2.1.1" class="pilcrow">¶</a></p>
 </li>
-                  <li class="normal" id="section-5.2-4.6.2.6.2.2">
-                    <p id="section-5.2-4.6.2.6.2.2.1"><code>position = position + 1</code><a href="#section-5.2-4.6.2.6.2.2.1" class="pilcrow">¶</a></p>
+                  <li class="normal" id="section-5.2-5.6.2.6.2.2">
+                    <p id="section-5.2-5.6.2.6.2.2.1"><code>position = position + 1</code><a href="#section-5.2-5.6.2.6.2.2.1" class="pilcrow">¶</a></p>
 </li>
-                  <li class="normal" id="section-5.2-4.6.2.6.2.3">
-                    <p id="section-5.2-4.6.2.6.2.3.1">If <code>decrypted_byte == 0x00</code>: continue (skip padding)<a href="#section-5.2-4.6.2.6.2.3.1" class="pilcrow">¶</a></p>
+                  <li class="normal" id="section-5.2-5.6.2.6.2.3">
+                    <p id="section-5.2-5.6.2.6.2.3.1">If <code>decrypted_byte == 0x00</code>: continue (skip padding)<a href="#section-5.2-5.6.2.6.2.3.1" class="pilcrow">¶</a></p>
 </li>
-                  <li class="normal" id="section-5.2-4.6.2.6.2.4">
-                    <p id="section-5.2-4.6.2.6.2.4.1"><code>component.append(decrypted_byte)</code><a href="#section-5.2-4.6.2.6.2.4.1" class="pilcrow">¶</a></p>
+                  <li class="normal" id="section-5.2-5.6.2.6.2.4">
+                    <p id="section-5.2-5.6.2.6.2.4.1"><code>component.append(decrypted_byte)</code><a href="#section-5.2-5.6.2.6.2.4.1" class="pilcrow">¶</a></p>
 </li>
-                  <li class="normal" id="section-5.2-4.6.2.6.2.5">
-                    <p id="section-5.2-4.6.2.6.2.5.1">If <code>decrypted_byte</code> is ‘/’, ‘?’, or ‘#’:<a href="#section-5.2-4.6.2.6.2.5.1" class="pilcrow">¶</a></p>
+                  <li class="normal" id="section-5.2-5.6.2.6.2.5">
+                    <p id="section-5.2-5.6.2.6.2.5.1">If <code>decrypted_byte</code> is ‘/’, ‘?’, or ‘#’:<a href="#section-5.2-5.6.2.6.2.5.1" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-5.2-4.6.2.6.2.5.2.1">
-                        <p id="section-5.2-4.6.2.6.2.5.2.1.1"><code>total_len = position - component_start</code><a href="#section-5.2-4.6.2.6.2.5.2.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-5.2-5.6.2.6.2.5.2.1">
+                        <p id="section-5.2-5.6.2.6.2.5.2.1.1"><code>total_len = position - component_start</code><a href="#section-5.2-5.6.2.6.2.5.2.1.1" class="pilcrow">¶</a></p>
 </li>
-                      <li class="normal" id="section-5.2-4.6.2.6.2.5.2.2">
-                        <p id="section-5.2-4.6.2.6.2.5.2.2.1"><code>position = position + ((3 - ((16 + total_len) % 3)) % 3)</code><a href="#section-5.2-4.6.2.6.2.5.2.2.1" class="pilcrow">¶</a></p>
+                      <li class="normal" id="section-5.2-5.6.2.6.2.5.2.2">
+                        <p id="section-5.2-5.6.2.6.2.5.2.2.1"><code>position = position + ((3 - ((16 + total_len) % 3)) % 3)</code><a href="#section-5.2-5.6.2.6.2.5.2.2.1" class="pilcrow">¶</a></p>
 </li>
-                      <li class="normal" id="section-5.2-4.6.2.6.2.5.2.3">
-                        <p id="section-5.2-4.6.2.6.2.5.2.3.1">Break inner loop<a href="#section-5.2-4.6.2.6.2.5.2.3.1" class="pilcrow">¶</a></p>
+                      <li class="normal" id="section-5.2-5.6.2.6.2.5.2.3">
+                        <p id="section-5.2-5.6.2.6.2.5.2.3.1">Break inner loop<a href="#section-5.2-5.6.2.6.2.5.2.3.1" class="pilcrow">¶</a></p>
 </li>
                     </ul>
 </li>
                 </ul>
 </li>
-              <li class="normal" id="section-5.2-4.6.2.7">
-                <p id="section-5.2-4.6.2.7.1">Update <code>components_xof</code> with <code>component</code>.<a href="#section-5.2-4.6.2.7.1" class="pilcrow">¶</a></p>
+              <li class="normal" id="section-5.2-5.6.2.7">
+                <p id="section-5.2-5.6.2.7.1">Update <code>components_xof</code> with <code>component</code>.<a href="#section-5.2-5.6.2.7.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-5.2-4.6.2.8">
-                <p id="section-5.2-4.6.2.8.1"><code>expected_SIV = components_xof.clone().read(16)</code>.<a href="#section-5.2-4.6.2.8.1" class="pilcrow">¶</a></p>
+              <li class="normal" id="section-5.2-5.6.2.8">
+                <p id="section-5.2-5.6.2.8.1"><code>expected_SIV = components_xof.clone().read(16)</code>.<a href="#section-5.2-5.6.2.8.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-5.2-4.6.2.9">
-                <p id="section-5.2-4.6.2.9.1">If <code>constant_time_compare(SIV, expected_SIV) == false</code>, return <code>error</code>.<a href="#section-5.2-4.6.2.9.1" class="pilcrow">¶</a></p>
+              <li class="normal" id="section-5.2-5.6.2.9">
+                <p id="section-5.2-5.6.2.9.1">If <code>constant_time_compare(SIV, expected_SIV) == false</code>, return <code>error</code>.<a href="#section-5.2-5.6.2.9.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="normal" id="section-5.2-4.6.2.10">
-                <p id="section-5.2-4.6.2.10.1"><code>decrypted_components.append(component)</code>.<a href="#section-5.2-4.6.2.10.1" class="pilcrow">¶</a></p>
+              <li class="normal" id="section-5.2-5.6.2.10">
+                <p id="section-5.2-5.6.2.10.1"><code>decrypted_components.append(component)</code>.<a href="#section-5.2-5.6.2.10.1" class="pilcrow">¶</a></p>
 </li>
             </ul>
 </li>
-          <li id="section-5.2-4.7">
-            <p id="section-5.2-4.7.1"><code>decrypted_path = join(decrypted_components)</code>.<a href="#section-5.2-4.7.1" class="pilcrow">¶</a></p>
+          <li id="section-5.2-5.7">
+            <p id="section-5.2-5.7.1"><code>decrypted_path = join(decrypted_components)</code>.<a href="#section-5.2-5.7.1" class="pilcrow">¶</a></p>
 </li>
-          <li id="section-5.2-4.8">
-            <p id="section-5.2-4.8.1">Return <code>scheme + decrypted_path</code><a href="#section-5.2-4.8.1" class="pilcrow">¶</a></p>
+          <li id="section-5.2-5.8">
+            <p id="section-5.2-5.8.1">Return <code>scheme + decrypted_path</code><a href="#section-5.2-5.8.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
 </section>
@@ -2476,10 +2495,13 @@ function extract_components(uri_string):
      scheme = ""
      path = uri_string
 
+  components = []
+
+  // For absolute paths, treat leading "/" as first component
   if path starts with "/":
+     components.append("/")
      path = substring after first "/"
 
-  components = []
   while path is not empty:
      terminator_pos = find_next_terminator(path)
      if terminator_pos found:
@@ -2583,8 +2605,13 @@ function uricrypt_encrypt(secret_key, context, uri_string):
   // Base64 encode with URL-safe characters and no padding
   base64_output = base64_urlsafe_no_pad_encode(encrypted_output)
 
-  // Return with scheme
-  return scheme + base64_output
+  // Return with appropriate prefix
+  if scheme != "":
+     return scheme + base64_output
+  else if uri_string starts with "/":
+     return "/" + base64_output
+  else:
+     return base64_output
 </pre><a href="#appendix-A.3-1" class="pilcrow">¶</a>
 </div>
 </section>
