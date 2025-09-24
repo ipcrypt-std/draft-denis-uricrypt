@@ -264,9 +264,9 @@ When combined with the scheme: "https://example.com/a/b/c"
 
 # Cryptographic Operations
 
-URICrypt uses multiple XOFs instances initialized from the same base XOF instance.
+URICrypt uses multiple XOF instances initialized from the same base XOF instance.
 
-The chained encryption model creates cryptographic dependencies between components, and ensures prefix preservation.
+The chained encryption model creates cryptographic dependencies between components and ensures prefix preservation.
 
 ~~~
   URI: "https://example.com/path/to/resource"
@@ -348,12 +348,12 @@ The chained encryption model creates cryptographic dependencies between componen
   Final Output: Output1 || Output2 || Output3 || Output4
 ~~~
 
-If URIs share a common prefix `example.com/path/`, their `Output1` and `Output2` will be identical
+If URIs share a common prefix `example.com/path/`, their `Output1` and `Output2` will be identical.
 
 ## XOF Initialization {#xof-init}
 
 The base XOF is initialized with the secret key and context
-parameter using length-prefixed encoding to prevent ambiguities.
+parameters using length-prefixed encoding to prevent ambiguities.
 
 Two XOF instances are derived from the base XOF:
 
@@ -458,7 +458,7 @@ the algorithms:
 
 * `TurboSHAKE128()`: Creates a new TurboSHAKE128 XOF instance with domain separation parameter 0x1F. This function produces an extensible output function (XOF) that can generate arbitrary-length outputs.
 
-* `.update(data)`: Absorbs the provided data into the XOF state. The data is processed sequentially and updates the internal state of the XOF.
+* `.update(data)`: Absorbs the provided data into the XOF state. Data is processed sequentially and updates the internal state of the XOF.
 
 * `.read(length)`: Squeezes the specified number of bytes from the XOF's output. Each call continues from where the previous read left off, producing a continuous stream of pseudorandom bytes.
 
@@ -476,7 +476,7 @@ the algorithms:
 
 * `len(data)`: Returns the length of the provided data in bytes.
 
-* concatenated with: The operation of joining two byte sequences end-to-end to form a single sequence.
+* Concatenation: The operation of joining two byte sequences end-to-end to form a single sequence.
 
 * `zeros(count)`: Generates a sequence of zero-valued bytes of the specified length, used for padding.
 
@@ -634,7 +634,7 @@ The context parameter provides cryptographic domain separation:
 
 URICrypt provides full key-commitment security.
 
-The scheme is fully key-committing, meaning that a ciphertext can only be decrypted with the exact key that was used to encrypt it. It is computationally infeasible to find two different keys that can successfully decrypt the same ciphertext to valid plaintexts
+The scheme is fully key-committing, meaning that a ciphertext can only be decrypted with the exact key that was used to encrypt it. It is computationally infeasible to find two different keys that can successfully decrypt the same ciphertext to valid plaintexts.
 
 ## Resistance to Common Attacks
 
