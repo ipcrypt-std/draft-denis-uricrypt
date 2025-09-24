@@ -431,7 +431,7 @@ The context parameter provides cryptographic domain separation:
 
 ## Key Commitment
 
-URICrypt provides full key-commitment security:
+URICrypt provides full key-commitment security.
 
 The scheme is fully key-committing, meaning that a ciphertext can only be decrypted with the exact key that was used to encrypt it. It is computationally infeasible to find two different keys that can successfully decrypt the same ciphertext to valid plaintexts
 
