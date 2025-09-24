@@ -218,9 +218,9 @@ For each component, the encryption process is:
 
 1.  Update components_hasher with the component plaintext
 2.  Generate SIV from components_hasher (16 bytes)
-3.  Create keystream_hasher by cloning base_keystream_hasher and updating with SIV
+3.  Create keystream_hasher by cloning `base_keystream_hashe`r and updating with SIV
 4.  Calculate padding needed for base64 encoding
-5.  Generate keystream of length (component_length + padding)
+5.  Generate keystream of length `(component_length + padding)`
 6.  XOR padded component with keystream
 7.  Output SIV concatenated with encrypted_component
 
@@ -267,20 +267,20 @@ Steps:
 
 1.  Split URI into scheme and components
 2.  Initialize hashers as described in {{hasher-init}}
-3.  encrypted_output = empty byte array
+3.  `encrypted_output = empty byte array`
 4.  For each component:
-      - Update components_hasher with component
-      - SIV = components_hasher.read(16)
-      - keystream_hasher = base_keystream_hasher.clone()
-      - keystream_hasher.update(SIV)
-      - padding_len = (3 - (16 + len(component)) % 3) % 3
-      - keystream = keystream_hasher.read(len(component) + padding_len)
-      - padded_component = component concatenated with zeros(padding_len)
-      - encrypted_part = padded_component XOR keystream
-      - encrypted_output = encrypted_output concatenated with SIV concatenated with encrypted_part
+      - `Update components_hasher with component`
+      - `SIV = components_hasher.read(16)`
+      - `keystream_hasher = base_keystream_hasher.clone()`
+      - `keystream_hasher.update(SIV)`
+      - `padding_len = (3 - (16 + len(component)) % 3) % 3`
+      - `keystream = keystream_hasher.read(len(component) + padding_len)`
+      - `padded_component = component concatenated with zeros(padding_len)`
+      - `encrypted_part = padded_component XOR keystream`
+      - `encrypted_output = encrypted_output concatenated with SIV concatenated with encrypted_part`
 
-5.  base64_output = base64url_encode(encrypted_output)
-6.  Return scheme + base64_output
+5.  `base64_output = base64url_encode(encrypted_output)`
+6.  Return `scheme + base64_output`
 
 ## Decryption Algorithm
 
@@ -291,26 +291,26 @@ Output: decrypted_uri or error
 Steps:
 
 1.  Split encrypted URI into scheme and base64 part
-2.  decoded = base64url_decode(base64_part). If decode fails, return error
+2.  `decoded = base64url_decode(base64_part)`. If `decode fails`, return `error`
 3.  Initialize hashers as described in {{hasher-init}}
-4.  decrypted_components = empty list
-5.  input_stream = Stream(decoded)
+4.  `decrypted_components = empty list`
+5.  `input_stream = Stream(decoded)`
 6.  While input_stream not empty:
-      - SIV = input_stream.read(16). If not enough bytes, return error
-      - keystream_hasher = base_keystream_hasher.clone()
-      - keystream_hasher.update(SIV)
+      - `SIV = input_stream.read(16)`. If not enough bytes, return `error`
+      - `keystream_hasher = base_keystream_hasher.clone()`
+      - `keystream_hasher.update(SIV)`
       - Determine component length from remaining data and padding
-      - encrypted_part = input_stream.read(component_length)
-      - keystream = keystream_hasher.read(len(encrypted_part))
-      - padded_plaintext = encrypted_part XOR keystream
-      - component = remove_padding(padded_plaintext)
-      - Update components_hasher with component
-      - expected_SIV = components_hasher.read(16)
-      - If constant_time_compare(SIV, expected_SIV) == false: return error
-      - decrypted_components.append(component)
+      - `encrypted_part = input_stream.read(component_length)`
+      - `keystream = keystream_hasher.read(len(encrypted_part))`
+      - `padded_plaintext = encrypted_part XOR keystream`
+      - `component = remove_padding(padded_plaintext)`
+      - Update `components_hasher` with component
+      - `expected_SIV = components_hasher.read(16)`
+      - If `constant_time_compare(SIV, expected_SIV) == false`: return `error`
+      - `decrypted_components.append(component)`
 
-7.  decrypted_path = join(decrypted_components)
-8.  Return scheme + decrypted_path
+7.  `decrypted_path = join(decrypted_components)`
+8.  Return `scheme + decrypted_path`
 
 # Implementation Details
 
