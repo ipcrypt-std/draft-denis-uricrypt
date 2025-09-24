@@ -264,8 +264,6 @@ When combined with the scheme: "https://example.com/a/b/c"
 
 # Cryptographic Operations
 
-URICrypt uses multiple XOF instances initialized from the same base XOF instance.
-
 The chained encryption model creates cryptographic dependencies between components and ensures prefix preservation.
 
 ~~~
