@@ -349,6 +349,77 @@ insufficient data) MUST result in identical, generic error messages.
 SIV comparison MUST be performed in constant-time to prevent timing
 attacks.
 
+# Security Guarantees
+
+URICrypt provides the following cryptographic security guarantees:
+
+## Confidentiality
+
+URICrypt achieves semantic security for URI path components through its use of TurboSHAKE128 as a pseudorandom function. Each component is encrypted using a unique keystream derived from:
+- The secret key
+- The application context
+- A synthetic initialization vector (SIV) that depends on all preceding components
+
+This construction ensures that:
+- An attacker without the secret key cannot recover plaintext components from ciphertexts
+- The keystream generation is computationally indistinguishable from random for each unique (key, context, path-prefix) tuple
+- Components are protected by at least 128 bits of security against brute-force attacks
+
+## Authenticity and Integrity
+
+Each URI component is authenticated through the SIV mechanism:
+- The SIV acts as a Message Authentication Code (MAC) computed over the component and all preceding components
+- Any modification to a component will cause the SIV verification to fail during decryption
+- The chained construction ensures that reordering, insertion, or deletion of components is detected
+- Authentication provides 128-bit security against forgery attempts
+
+## Prefix-Preserving Property
+
+URICrypt maintains a controlled information leakage pattern:
+- URIs sharing a common prefix will produce ciphertexts with the same encrypted prefix
+- This property is deterministic and intentional, enabling systems to perform prefix-based operations
+- The leakage is limited to prefix structure only - no information about non-matching suffixes is revealed
+
+## Domain Separation
+
+The context parameter provides cryptographic domain separation:
+- Different contexts with the same key produce completely independent ciphertexts
+- This prevents cross-context attacks where ciphertexts from one application could be used in another
+- Context binding is cryptographically enforced through the hasher initialization
+
+## Resistance to Common Attacks
+
+URICrypt resists several categories of attacks:
+
+Chosen-Plaintext Attacks (CPA): While deterministic, URICrypt is CPA-secure for unique inputs. The determinism is a design requirement for prefix preservation.
+
+Tampering Detection: Any bit flip, truncation, or modification in the ciphertext will be detected with overwhelming probability (1 - 2<sup>-128</sup>).
+
+Length Extension: The use of length-prefixed encoding and domain separation prevents length extension attacks.
+
+Replay Attacks: Within a single (key, context) pair, replay is possible due to determinism. Applications requiring replay protection should incorporate timestamps or nonces in the context.
+
+Key Recovery: TurboSHAKE128's security properties ensure that observing ciphertexts does not leak information about the secret key.
+
+## Security Bounds
+
+The security of URICrypt is bounded by:
+
+- Key strength: Minimum 128-bit security with 16-byte keys
+- Collision resistance: 2^64 birthday bound for SIV collisions
+- Authentication security: 2<sup>-128</sup> probability of successful forgery
+- Computational security: Based on TurboSHAKE128's proven security as an XOF
+
+## Limitations and Trade-offs
+
+URICrypt makes specific security trade-offs for functionality:
+
+- Deterministic encryption: Same inputs produce same outputs, enabling certain traffic analysis
+- Length preservation: Component lengths are not hidden, potentially revealing information patterns
+- Prefix structure leakage: The hierarchical structure of URIs is preserved by design
+
+These trade-offs are intentional and necessary for the prefix-preserving functionality. Applications requiring stronger privacy guarantees should evaluate whether URICrypt's properties align with their threat model.
+
 # Security Considerations
 
 URICrypt provides confidentiality and integrity for URI paths while
@@ -604,8 +675,8 @@ function base64_urlsafe_no_pad_encode(data):
   encoded = standard_base64_encode(data)
   // Make URL-safe and remove padding
   encoded = encoded.replace('+', '-')
-                 .replace('/', '_')
-                 .rstrip('=')
+                   .replace('/', '_')
+                   .rstrip('=')
   return encoded
 
 function base64_urlsafe_no_pad_decode(encoded):
@@ -615,7 +686,7 @@ function base64_urlsafe_no_pad_decode(encoded):
      encoded = encoded + ('=' * padding)
   // Make standard base64
   encoded = encoded.replace('-', '+')
-                 .replace('_', '/')
+                   .replace('_', '/')
   // Decode
   return standard_base64_decode(encoded)
 ~~~
