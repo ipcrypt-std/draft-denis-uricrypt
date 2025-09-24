@@ -528,17 +528,6 @@ function extract_components(uri_string):
 
 ~~~
 function initialize_hashers(secret_key, context):
-  // Validate key length
-  if len(secret_key) < 16:
-     return error("Key too short")
-
-  // Validate key pattern (best practice)
-  if len(secret_key) >= 32:
-     first_half = secret_key[0:len(secret_key)/2]
-     second_half = secret_key[len(secret_key)/2:]
-     if first_half == second_half:
-        return error("Weak key pattern detected")
-
   // Initialize base hasher
   base_hasher = TurboSHAKE128(0x1F)
 
