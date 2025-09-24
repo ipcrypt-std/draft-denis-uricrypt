@@ -1940,10 +1940,18 @@ attacks.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
         <h3 id="name-prefix-preserving-property">
 <a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-prefix-preserving-property" class="section-name selfRef">Prefix-Preserving Property</a>
         </h3>
-<p id="section-7.3-1">URICrypt maintains a controlled information leakage pattern:
-- URIs sharing a common prefix will produce ciphertexts with the same encrypted prefix
-- This property is deterministic and intentional, enabling systems to perform prefix-based operations
-- The leakage is limited to prefix structure only - no information about non-matching suffixes is revealed<a href="#section-7.3-1" class="pilcrow">¶</a></p>
+<p id="section-7.3-1">URICrypt maintains a controlled information leakage pattern:<a href="#section-7.3-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-7.3-2.1">
+            <p id="section-7.3-2.1.1">URIs sharing a common prefix will produce ciphertexts with the same encrypted prefix<a href="#section-7.3-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.3-2.2">
+            <p id="section-7.3-2.2.1">This property is deterministic and intentional, enabling systems to perform prefix-based operations<a href="#section-7.3-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.3-2.3">
+            <p id="section-7.3-2.3.1">The leakage is limited to prefix structure only - no information about non-matching suffixes is revealed<a href="#section-7.3-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
 </section>
 </div>
 <div id="domain-separation">
@@ -1951,10 +1959,18 @@ attacks.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
         <h3 id="name-domain-separation">
 <a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-domain-separation" class="section-name selfRef">Domain Separation</a>
         </h3>
-<p id="section-7.4-1">The context parameter provides cryptographic domain separation:
-- Different contexts with the same key produce completely independent ciphertexts
-- This prevents cross-context attacks where ciphertexts from one application could be used in another
-- Context binding is cryptographically enforced through the hasher initialization<a href="#section-7.4-1" class="pilcrow">¶</a></p>
+<p id="section-7.4-1">The context parameter provides cryptographic domain separation:<a href="#section-7.4-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-7.4-2.1">
+            <p id="section-7.4-2.1.1">Different contexts with the same key produce completely independent ciphertexts<a href="#section-7.4-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.4-2.2">
+            <p id="section-7.4-2.2.1">This prevents cross-context attacks where ciphertexts from one application could be used in another<a href="#section-7.4-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.4-2.3">
+            <p id="section-7.4-2.3.1">Context binding is cryptographically enforced through the hasher initialization<a href="#section-7.4-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
 </section>
 </div>
 <div id="resistance-to-common-attacks">
