@@ -70,6 +70,7 @@ Table of Contents
      4.1.  XOF Initialization
      4.2.  Component Encryption
      4.3.  Component Decryption
+       4.3.1.  Component Boundary Detection
      4.4.  Padding and Encoding
    5.  Algorithm Specification
      5.1.  Encryption Algorithm
@@ -88,8 +89,9 @@ Table of Contents
      7.7.  Security Bounds
      7.8.  Limitations and Trade-offs
    8.  Security Considerations
-   9.  IANA Considerations
-   10. Normative References
+   IANA Considerations
+   Acknowledgments
+   Normative References
    Appendix A.  Pseudocode
      A.1.  URI Component Extraction
      A.2.  XOF Initialization
@@ -102,6 +104,9 @@ Table of Contents
      B.3.  Test Vector 3: Multi-Component Path
      B.4.  Test Vector 4: Root with Scheme
      B.5.  Test Vector 5: Simple Path
+     B.6.  Test Vector 6: URI with Query Parameters
+     B.7.  Test Vector 7: URI with Fragment
+     B.8.  Test Vector 8: URI with Query and Fragment
    Author's Address
 
 1.  Introduction
@@ -131,7 +136,7 @@ Table of Contents
 
    *  Access Control in CDNs: Content Delivery Networks often use URI
       prefixes for routing and access control.  URICrypt allows
-      encrypting resource paths while preserving the prefix structure
+      encryption of resource paths while preserving the prefix structure
       needed for CDN operations.
 
    *  Privacy-Preserving Logging: Systems can log encrypted URIs without
@@ -146,11 +151,11 @@ Table of Contents
       tokens can use URICrypt to obfuscate the underlying resource
       location while maintaining routability.
 
-   *  Multi-Tenant Systems: In systems where multiple tenants share
+   *  Multi-tenant Systems: In systems where multiple tenants share
       infrastructure, URICrypt can isolate tenant data while allowing
       shared components to be processed efficiently.
 
-   *  Privacy-Preserving Analytics: URICrypt can complement IPCrypt
+   *  Privacy-preserving Analytics: URICrypt can complement IPCrypt
       [I-D.draft-denis-ipcrypt].  Together, they enable systems to
       perform analytics on encrypted network flows and resource access
       patterns without exposing sensitive information about either the
@@ -168,9 +173,9 @@ Table of Contents
 
    *  URI: Uniform Resource Identifier as defined in [RFC3986].
 
-   *  URI Component: A segment of a URI path, typically separated by ‘/’
-      characters.  For encryption purposes, components include the
-      trailing separator except for the final component.
+   *  URI Component: A segment of a URI path, terminated by ‘/’, ‘?’, or
+      ‘#’ characters.  For encryption purposes, components include the
+      trailing terminator except for the final component.
 
    *  Scheme: The URI scheme (e.g., “https://”) which is preserved in
       plaintext.
@@ -186,7 +191,7 @@ Table of Contents
       cryptographic functions to ensure outputs for different purposes
       are not compatible.
 
-   *  Prefix-Preserving Encryption: An encryption scheme where if two
+   *  Prefix-preserving Encryption: An encryption scheme where, if two
       plaintexts share a common prefix, their corresponding ciphertexts
       also share a common (encrypted) prefix.
 
@@ -198,11 +203,56 @@ Table of Contents
    This section describes how URIs are processed for encryption and
    decryption.
 
+   The overall encryption flow transforms a plaintext URI into an
+   encrypted URI while preserving its hierarchical structure:
+
+   +-------------------------------------------------------------+
+   |                         Input URI                           |
+   |          "https://example.com/path/to/resource"             |
+   +-------------------------------------------------------------+
+                                 |
+                                 v
+   +-------------------------------------------------------------+
+   |                    URI Decomposition                        |
+   +-------------------------------------------------------------+
+   |  Scheme: "https://"                                         |
+   |  Components: ["example.com/", "path/", "to/", "resource"]   |
+   +-------------------------------------------------------------+
+                                 |
+                                 v
+   +-------------------------------------------------------------+
+   |                 Chained Encryption Process                  |
+   +-------------------------------------------------------------+
+   |  For each component in sequence:                            |
+   |    1. Update state with plaintext                           |
+   |    2. Generate SIV from accumulated state                   |
+   |    3. Derive keystream using SIV                            |
+   |    4. Encrypt component with keystream                      |
+   |    5. Output: SIV || encrypted_component                    |
+   +-------------------------------------------------------------+
+                                 |
+                                 v
+   +-------------------------------------------------------------+
+   |                    Encoding & Assembly                      |
+   +-------------------------------------------------------------+
+   |  1. Concatenate all (SIV || encrypted_component) pairs      |
+   |  2. Apply base64url encoding                                |
+   |  3. Prepend original scheme                                 |
+   +-------------------------------------------------------------+
+                                 |
+                                 v
+   +-------------------------------------------------------------+
+   |                       Encrypted URI                         |
+   |          "https://HOGo9vauZ3b3xsPNPQng5apS..."              |
+   +-------------------------------------------------------------+
+
 3.1.  URI Component Extraction
 
    Before encryption, a URI must be split into its scheme and path
    components.  The path is further divided into individual components
-   for chained encryption.
+   for chained encryption.  Components are terminated by ‘/’, ‘?’, or
+   ‘#’ characters, which allows proper handling of query strings and
+   fragments.
 
 3.1.1.  Full URIs
 
@@ -218,24 +268,62 @@ Table of Contents
    - Component 3: "b/"
    - Component 4: "c"
 
-   Note that all components except the last include the trailing ‘/’
-   character.  This ensures proper reconstruction during decryption.
+   For a URI with query parameters:
+
+   Input:  "https://example.com/path?foo=bar&baz=qux"
+
+   Components:
+
+   - Scheme: "https://"
+   - Component 1: "example.com/"
+   - Component 2: "path?"
+   - Component 3: "foo=bar&baz=qux"
+
+   For a URI with a fragment:
+
+   Input:  "https://example.com/path#section"
+
+   Components:
+
+   - Scheme: "https://"
+   - Component 1: "example.com/"
+   - Component 2: "path#"
+   - Component 3: "section"
+
+   Note that all components except the last include their trailing
+   terminator character (‘/’, ‘?’, or ‘#’).  This ensures proper
+   reconstruction during decryption.
 
 3.1.2.  Path-Only URIs
 
-   For URIs without a scheme:
+   For absolute paths (URIs starting with ‘/’ but without a scheme), the
+   leading ‘/’ is treated as the first component:
 
    Input:  "/a/b/c"
 
    Components:
 
    - Scheme: "" (empty)
-   - Component 1: "a/"
-   - Component 2: "b/"
-   - Component 3: "c"
+   - Component 1: "/"
+   - Component 2: "a/"
+   - Component 3: "b/"
+   - Component 4: "c"
 
-   The leading ‘/’ is not treated as a separate component but is implied
-   during reconstruction.
+   For a path with query parameters:
+
+   Input:  "/path/to/file?param=value"
+
+   Components:
+
+   - Scheme: "" (empty)
+   - Component 1: "/"
+   - Component 2: "path/"
+   - Component 3: "to/"
+   - Component 4: "file?"
+   - Component 5: "param=value"
+
+   The leading ‘/’ is explicitly encrypted as a component to maintain
+   consistency and enable proper prefix preservation for absolute paths.
 
 3.2.  Component Reconstruction
 
@@ -247,16 +335,101 @@ Table of Contents
 
    When combined with the scheme: "https://example.com/a/b/c"
 
+   For absolute paths without a scheme:
+
+   Components: ["/", "a/", "b/", "c"]
+   Reconstructed Path: "/a/b/c"
+
 4.  Cryptographic Operations
 
-   URICrypt uses three parallel TurboSHAKE128
-   [I-D.draft-irtf-cfrg-kangarootwelve] instances for different
-   purposes, all initialized from the same base XOF instance.
+   The chained encryption model creates cryptographic dependencies
+   between components, ensuring prefix preservation.
+
+     URI: "https://example.com/path/to/resource"
+
+     +-------------------+
+     |   Component 1:    |
+     |  "example.com/"   |
+     +-------------------+
+               |
+               | Plaintext absorbed into components_xof
+               v
+     +-------------------+
+     | SIV1 generation   |------> SIV1 (16 bytes)
+     +-------------------+         |
+                                   |
+                                   v
+                         Encrypt("example.com/")
+                                   |
+                                   v
+                         Output1 = SIV1 || Ciphertext1
+               |
+               | State carries forward
+               v
+     +-------------------+
+     |   Component 2:    |
+     |     "path/"       |
+     +-------------------+
+               |
+               | Plaintext absorbed (includes Component 1 state)
+               v
+     +-------------------+
+     | SIV2 generation   |------> SIV2 (depends on 1)
+     +-------------------+         |
+                                   |
+                                   v
+                         Encrypt("path/")
+                                   |
+                                   v
+                         Output2 = SIV2 || Ciphertext2
+               |
+               | State carries forward
+               v
+     +-------------------+
+     |   Component 3:    |
+     |      "to/"        |
+     +-------------------+
+               |
+               | Plaintext absorbed (includes 1 + 2 state)
+               v
+     +-------------------+
+     | SIV3 generation   |------> SIV3 (depends on 1, 2)
+     +-------------------+         |
+                                   |
+                                   v
+                         Encrypt("to/")
+                                   |
+                                   v
+                         Output3 = SIV3 || Ciphertext3
+               |
+               | State carries forward
+               v
+     +-------------------+
+     |   Component 4:    |
+     |    "resource"     |
+     +-------------------+
+               |
+               | Plaintext absorbed (includes 1 + 2 + 3 state)
+               v
+     +-------------------+
+     | SIV4 generation   |------> SIV4 (depends on 1, 2, 3)
+     +-------------------+         |
+                                   |
+                                   v
+                         Encrypt("resource")
+                                   |
+                                   v
+                         Output4 = SIV4 || Ciphertext4
+
+     Final Output: Output1 || Output2 || Output3 || Output4
+
+   If URIs share a common prefix example.com/path/, their Output1 and
+   Output2 will be identical.
 
 4.1.  XOF Initialization
 
-   The base XOF is initialized with the secret key and context parameter
-   using length-prefixed encoding to prevent ambiguities.
+   The base XOF is initialized with the secret key and context
+   parameters using length-prefixed encoding to prevent ambiguities.
 
    Two XOF instances are derived from the base XOF:
 
@@ -266,7 +439,36 @@ Table of Contents
    2.  Base Keystream XOF: Used as the starting point for generating
        keystream for each component
 
-   The initialization process:
+     Input: len(key) || key || len(context) || context
+
+     +------------------------------------------------------+
+     | base_xof = TurboSHAKE128(domain_sep=0x1F)           |
+     | base_xof.update(len(secret_key))                    |
+     | base_xof.update(secret_key)                         |
+     | base_xof.update(len(context))                       |
+     | base_xof.update(context)                            |
+     +------------------------------------------------------+
+                               |
+                               v
+                  +------------------------+
+                  |   Clone Base State     |
+                  +------------------------+
+                               |
+              +----------------+----------------+
+              v                                 v
+     +--------------------+          +--------------------+
+     |  Components XOF    |          | Base Keystream XOF |
+     +--------------------+          +--------------------+
+     |   update("IV")     |          |   update("KS")     |
+     +--------------------+          +--------------------+
+              |                                 |
+              |                                 |
+              v                                 v
+      For SIV Generation              For Keystream Base
+      (Updated with each              (Cloned for each
+       component plaintext)            component's keystream)
+
+   The initialization process is:
 
    base_xof = TurboSHAKE128()
    base_xof.update(len(secret_key))
@@ -280,27 +482,53 @@ Table of Contents
    base_keystream_xof = base_xof.clone()
    base_keystream_xof.update("KS")
 
+   Note on XOF cloning: The .clone() operation creates a new XOF
+   instance with an identical internal state, preserving all previously
+   absorbed data.  After cloning, the original and cloned XOFs can be
+   updated and read from independently.  This allows the components_xof
+   to maintain a running state across all components while
+   base_keystream_xof remains unchanged for creating per-component
+   keystreams.
+
 4.2.  Component Encryption
 
-   For each component, the encryption process is:
+   For each component, the encryption process follows a precise sequence
+   that ensures both confidentiality and authenticity:
 
    1.  Update components_xof with the component plaintext
 
-   2.  Generate SIV from components_xof (16 bytes)
+   2.  Squeeze the SIV from components_xof (16 bytes).  This requires
+       cloning components_xof before reading, as reading may finalize
+       the XOF.
 
    3.  Create keystream_xof by cloning base_keystream_xof and updating
-       with SIV
+       it with SIV
 
    4.  Calculate padding needed for base64 encoding
 
-   5.  Generate keystream of length (component_length + padding)
+   5.  Generate a keystream of length (component_length + padding)
 
-   6.  XOR padded component with keystream
+   6.  XOR the padded component with the keystream
 
    7.  Output SIV concatenated with encrypted_component
 
-   The padding length is calculated as: padding_len = (3 - (16 +
-   component_len) % 3) % 3
+   The padding ensures clean base64url encoding without padding
+   characters.  Since base64 encoding works with groups of 3 bytes
+   (producing 4 characters), we pad each (SIV || encrypted_component)
+   pair to have a length that’s a multiple of 3:
+
+   total_bytes = 16 (SIV) + component_len
+   padding_len = (3 - total_bytes % 3) % 3
+
+   This formula calculates: - How many bytes are needed to reach the
+   next multiple of 3 - The outer modulo handles the case where
+   total_bytes is already a multiple of 3
+
+   Important: The components_xof maintains state across all components.
+   After generating the SIV for component N, the XOF can be updated with
+   component N+1’s plaintext.  This chaining ensures that each
+   component’s encryption depends on all previous components, thus
+   enabling the prefix-preserving property.
 
 4.3.  Component Decryption
 
@@ -309,32 +537,73 @@ Table of Contents
    1.  Read SIV from input (16 bytes)
 
    2.  Create keystream_xof by cloning base_keystream_xof and updating
-       with SIV
+       it with SIV
 
-   3.  Read encrypted component data (length determined from encoding)
+   3.  Decrypt bytes incrementally to determine component boundaries:
 
-   4.  Generate keystream and decrypt component
+       *  Generate keystream bytes one at a time from the XOF
 
-   5.  Remove padding to recover plaintext
+       *  XOR each encrypted byte with its corresponding keystream byte
 
-   6.  Update components_xof with plaintext
+       *  Check each decrypted byte for component terminators (‘/’, ‘?’,
+          ‘#’)
 
-   7.  Generate expected SIV from components_xof
+       *  When a terminator is found, the component is complete.
 
-   8.  Compare expected SIV with received SIV (constant-time)
+       *  Skip any padding bytes (null bytes) after the component
 
-   9.  If mismatch, return error
+   4.  Update components_xof with the complete plaintext component
+       (including terminator)
+
+   5.  Generate the expected SIV from components_xof
+
+   6.  Compare the expected SIV with the received SIV (constant-time)
+
+   7.  If mismatch, return error
+
+4.3.1.  Component Boundary Detection
+
+   During decryption, component boundaries are discovered dynamically by
+   examining the decrypted plaintext:
+
+   *  Each component (except possibly the last) ends with a terminator
+      character (‘/’, ‘?’, or ‘#’)
+
+   *  When a terminator is encountered, we know the component is
+      complete
+
+   *  After finding the terminator, we skip padding bytes to align to
+      the next 3-byte boundary.
+
+   *  The padding length can be calculated: padding = (3 - ((SIV_size +
+      bytes_read) % 3)) % 3
+
+   This approach eliminates the need for explicit length encoding, as
+   the component structure itself provides the necessary boundary
+   information.
 
    Any tampering with the encrypted data will cause the SIV comparison
    to fail.
 
 4.4.  Padding and Encoding
 
-   Each encrypted component (SIV || ciphertext) is padded to make its
-   length a multiple of 3 bytes, enabling clean base64 encoding without
-   padding characters.
+   To enable clean base64url encoding without padding characters (‘=’),
+   each encrypted component pair (SIV || ciphertext) is padded to be a
+   multiple of 3 bytes.  This is necessary because base64 encoding
+   processes 3 bytes at a time to produce 4 characters of output.
 
-   The final output is encoded using URL-safe base64 [RFC4648].
+   The padding calculation (3 - (16 + component_len) % 3) % 3 ensures
+   the following:
+
+   *  If (16 + component_len) % 3 = 0: no padding needed (already
+      aligned)
+
+   *  If (16 + component_len) % 3 = 1: add 2 bytes of padding
+
+   *  If (16 + component_len) % 3 = 2: add 1 byte of padding
+
+   The final output is encoded using URL-safe base64 [RFC4648], with ‘-‘
+   replacing ‘+’ and ‘_’ replacing ‘/’ for URI compatibility.
 
 5.  Algorithm Specification
 
@@ -347,9 +616,9 @@ Table of Contents
       extensible output function (XOF) that can generate arbitrary-
       length outputs.
 
-   *  .update(data): Absorbs the provided data into the XOF state.  The
-      data is processed sequentially and updates the internal state of
-      the XOF.
+   *  .update(data): Absorbs the provided data into the XOF state.  Data
+      is processed sequentially and updates the internal state of the
+      XOF.
 
    *  .read(length): Squeezes the specified number of bytes from the
       XOF’s output.  Each call continues from where the previous read
@@ -382,8 +651,8 @@ Table of Contents
 
    *  len(data): Returns the length of the provided data in bytes.
 
-   *  concatenated with: The operation of joining two byte sequences
-      end-to-end to form a single sequence.
+   *  Concatenation: The operation of joining two byte sequences end-to-
+      end to form a single sequence.
 
    *  zeros(count): Generates a sequence of zero-valued bytes of the
       specified length, used for padding.
@@ -392,7 +661,8 @@ Table of Contents
       sequence to recover the original data length.
 
    *  join(components): Combines multiple path components into a single
-      path string using ‘/’ as the separator between components.
+      path string, preserving the terminator characters (‘/’, ‘?’, ‘#’)
+      that are included in each component.
 
 5.1.  Encryption Algorithm
 
@@ -410,78 +680,100 @@ Table of Contents
 
    4.  For each component:
 
-       *  Update components_xof with component
+       *  Update components_xof with component.
 
-       *  SIV = components_xof.read(16)
+       *  SIV = components_xof.clone().read(16).
 
-       *  keystream_xof = base_keystream_xof.clone()
+       *  keystream_xof = base_keystream_xof.clone().
 
-       *  keystream_xof.update(SIV)
+       *  keystream_xof.update(SIV).
 
-       *  padding_len = (3 - (16 + len(component)) % 3) % 3
+       *  padding_len = (3 - (16 + len(component)) % 3) % 3.
 
-       *  keystream = keystream_xof.read(len(component) + padding_len)
+       *  keystream = keystream_xof.read(len(component) + padding_len).
 
        *  padded_component = component concatenated with
-          zeros(padding_len)
+          zeros(padding_len).
 
-       *  encrypted_part = padded_component XOR keystream
+       *  encrypted_part = padded_component XOR keystream.
 
        *  encrypted_output = encrypted_output concatenated with SIV
-          concatenated with encrypted_part
+          concatenated with encrypted_part.
 
-   5.  base64_output = base64url_encode(encrypted_output)
+   5.  base64_output = base64url_encode(encrypted_output).
 
-   6.  Return scheme + base64_output
+   6.  If scheme is not empty: Return scheme + base64_output
+
+   7.  Else if original URI started with ‘/’: Return '/' + base64_output
+
+   8.  Else: Return base64_output
 
 5.2.  Decryption Algorithm
 
    Input: secret_key, context, encrypted_uri
 
-   Output: decrypted_uri or error
+   Output: encrypted_uri
+
+   Note: For path-only URIs (those starting with ‘/’), the output format
+   is: - ‘/’ followed by the base64url-encoded encrypted components -
+   This preserves the absolute path indicator in the encrypted form or
+   error
 
    Steps:
 
    1.  Split encrypted URI into scheme and base64 part
 
    2.  decoded = base64url_decode(base64_part).  If decoding fails,
-       return error
+       return error.
 
    3.  Initialize XOF instances as described in Section 4.1
 
    4.  decrypted_components = empty list
 
-   5.  input_stream = Stream(decoded)
+   5.  position = 0
 
-   6.  While input_stream is not empty:
+   6.  While position < len(decoded):
 
-       *  SIV = input_stream.read(16).  If not enough bytes, return
-          error
+       *  SIV = decoded[position:position+16].  If not enough bytes,
+          return error.
 
-       *  keystream_xof = base_keystream_xof.clone()
+       *  keystream_xof = base_keystream_xof.clone().update(SIV).
 
-       *  keystream_xof.update(SIV)
+       *  component_start = position + 16
 
-       *  Determine component length from remaining data and padding
+       *  component = empty byte array
 
-       *  encrypted_part = input_stream.read(component_length)
+       *  position = position + 16
 
-       *  keystream = keystream_xof.read(len(encrypted_part))
+       *  While position < len(decoded):
 
-       *  padded_plaintext = encrypted_part XOR keystream
+          -  decrypted_byte = decoded[position] XOR
+             keystream_xof.read(1)
 
-       *  component = remove_padding(padded_plaintext)
+          -  position = position + 1
 
-       *  Update components_xof with component
+          -  If decrypted_byte == 0x00: continue (skip padding)
 
-       *  expected_SIV = components_xof.read(16)
+          -  component.append(decrypted_byte)
 
-       *  If constant_time_compare(SIV, expected_SIV) == false: return
-          error
+          -  If decrypted_byte is ‘/’, ‘?’, or ‘#’:
 
-       *  decrypted_components.append(component)
+             o  total_len = position - component_start
 
-   7.  decrypted_path = join(decrypted_components)
+             o  position = position + ((3 - ((16 + total_len) % 3)) % 3)
+
+             o  Break inner loop
+
+       *  Update components_xof with component.
+
+       *  expected_SIV = components_xof.clone().read(16).
+
+       *  If constant_time_compare(SIV, expected_SIV) == false, return
+          error.
+
+       *  decrypted_components.append(component).
+
+   7.  decrypted_path = join(decrypted_components).
 
    8.  Return scheme + decrypted_path
 
@@ -542,7 +834,7 @@ Table of Contents
 
    URICrypt achieves semantic security for URI path components through
    its use of TurboSHAKE128 as a pseudorandom function.  Each component
-   is encrypted using a unique keystream derived from:
+   is encrypted using a unique keystream derived from the following:
 
    *  The secret key
 
@@ -554,54 +846,54 @@ Table of Contents
    This construction ensures that:
 
    *  An attacker without the secret key cannot recover plaintext
-      components from ciphertexts
+      components from ciphertexts.
 
    *  The keystream generation is computationally indistinguishable from
-      random for each unique (key, context, path-prefix) tuple
+      random for each unique (key, context, path-prefix) tuple.
 
    *  Components are protected by at least 128 bits of security against
-      brute-force attacks
+      brute-force attacks.
 
 7.2.  Authenticity and Integrity
 
    Each URI component is authenticated through the SIV mechanism:
 
    *  The SIV acts as a Message Authentication Code (MAC) computed over
-      the component and all preceding components
+      the component and all preceding components.
 
    *  Any modification to a component will cause the SIV verification to
-      fail during decryption
+      fail during decryption.
 
    *  The chained construction ensures that reordering, insertion, or
-      deletion of components is detected
+      deletion of components is detected.
 
-   *  Authentication provides 128-bit security against forgery attempts
+   *  Authentication provides 128-bit security against forgery attempts.
 
 7.3.  Prefix-Preserving Property
 
    URICrypt maintains a controlled information leakage pattern:
 
    *  URIs sharing a common prefix will produce ciphertexts with the
-      same encrypted prefix
+      same encrypted prefix.
 
    *  This property is deterministic and intentional, enabling systems
-      to perform prefix-based operations
+      to perform prefix-based operations.
 
-   *  The leakage is limited to prefix structure only - no information
-      about non-matching suffixes is revealed
+   *  The leakage is limited to prefix structure only—no information
+      about non-matching suffixes is revealed.
 
 7.4.  Domain Separation
 
    The context parameter provides cryptographic domain separation:
 
    *  Different contexts with the same key produce completely
-      independent ciphertexts
+      independent ciphertexts.
 
    *  This prevents cross-context attacks where ciphertexts from one
-      application could be used in another
+      application could be used in another.
 
    *  Context binding is cryptographically enforced through the XOF
-      initialization
+      initialization.
 
 7.5.  Key Commitment
 
@@ -609,14 +901,14 @@ Table of Contents
 
    The scheme is fully key-committing, meaning that a ciphertext can
    only be decrypted with the exact key that was used to encrypt it.  It
-   is computationally infeasible to find two different keys that can
-   successfully decrypt the same ciphertext to valid plaintexts
+   is computationally infeasible to find two different keys that
+   successfully decrypt the same ciphertext to valid plaintexts.
 
 7.6.  Resistance to Common Attacks
 
    URICrypt resists several categories of attacks:
 
-   Chosen-Plaintext Attacks (CPA): While deterministic, URICrypt is CPA-
+   Chosen-plaintext Attacks (CPA): While deterministic, URICrypt is CPA-
    secure for unique inputs.  The determinism is a design requirement
    for prefix preservation.
 
@@ -624,19 +916,19 @@ Table of Contents
    ciphertext will be detected with overwhelming probability (1 - 2^-
    128).
 
-   Length Extension: The use of length-prefixed encoding and domain
-   separation prevents length extension attacks.
+   Length-extension Attacks: The use of length-prefixed encoding and
+   domain separation prevents length-extension attacks.
 
    Replay Attacks: Within a single (key, context) pair, replay is
    possible due to determinism.  Applications requiring replay
-   protection should incorporate timestamps or nonces in the context.
+   protection should incorporate timestamps or nonces into the context.
 
    Key Recovery: TurboSHAKE128’s security properties ensure that
    observing ciphertexts does not leak information about the secret key.
 
 7.7.  Security Bounds
 
-   The security of URICrypt is bounded by:
+   The security of URICrypt is bounded by the following:
 
    *  Key strength: Minimum 128-bit security with 16-byte keys
 
@@ -649,7 +941,8 @@ Table of Contents
 
 7.8.  Limitations and Trade-offs
 
-   URICrypt makes specific security trade-offs for functionality:
+   URICrypt makes specific security trade-offs for functionality,
+   including the following:
 
    *  Deterministic encryption: Same inputs produce same outputs,
       enabling certain traffic analysis
@@ -705,11 +998,17 @@ Table of Contents
       using the same (key, context) pair for different applications is
       NOT RECOMMENDED.
 
-9.  IANA Considerations
+IANA Considerations
 
    This document has no actions for IANA.
 
-10.  Normative References
+Acknowledgments
+
+   The author would like to thank Maciej Soltysiak for highlighting the
+   importance of properly supporting query parameters and fragments in
+   URI encryption.
+
+Normative References
 
    [I-D.draft-denis-ipcrypt]
               Denis, F., "Methods for IP Address Encryption and
@@ -760,21 +1059,30 @@ A.1.  URI Component Extraction
         scheme = ""
         path = uri_string
 
+     components = []
+
+     // For absolute paths, treat leading "/" as first component
      if path starts with "/":
+        components.append("/")
         path = substring after first "/"
 
-     components = []
      while path is not empty:
-        slash_pos = find("/", path)
-        if slash_pos found:
-           component = substring(0, slash_pos + 1)
-           path = substring(slash_pos + 1)
+        terminator_pos = find_next_terminator(path)
+        if terminator_pos found:
+           component = substring(path, 0, terminator_pos + 1)
+           path = substring(path, terminator_pos + 1)
            components.append(component)
         else:
            components.append(path)
            path = ""
 
      return (scheme, components)
+
+   function find_next_terminator(path):
+     for i from 0 to length(path) - 1:
+        if path[i] == '/' or path[i] == '?' or path[i] == '#':
+           return i
+     return not_found
 
 A.2.  XOF Initialization
 
@@ -824,6 +1132,8 @@ A.3.  Encryption Algorithm
         keystream_xof.update(siv)
 
         // Calculate padding for base64 encoding alignment
+        // The total bytes (SIV + component) must be a multiple of 3
+        // to produce clean base64 output without padding characters
         component_len = len(component)
         padding_len = (3 - (16 + component_len) % 3) % 3
 
@@ -843,8 +1153,13 @@ A.3.  Encryption Algorithm
      // Base64 encode with URL-safe characters and no padding
      base64_output = base64_urlsafe_no_pad_encode(encrypted_output)
 
-     // Return with scheme
-     return scheme + base64_output
+     // Return with appropriate prefix
+     if scheme != "":
+        return scheme + base64_output
+     else if uri_string starts with "/":
+        return "/" + base64_output
+     else:
+        return base64_output
 
 A.4.  Decryption Algorithm
 
@@ -935,7 +1250,10 @@ A.5.  Padding and Encoding
 
    function calculate_padding(component_len):
      // Calculate padding needed for base64 encoding alignment
-     return (3 - (16 + component_len) % 3) % 3
+     // The combined SIV (16 bytes) + component must be divisible by 3
+     // for clean base64 encoding without '=' padding characters
+     total_len = 16 + component_len
+     return (3 - total_len % 3) % 3
 
    function base64_urlsafe_no_pad_encode(data):
      // Use standard base64 encoding
@@ -995,6 +1313,27 @@ B.5.  Test Vector 5: Simple Path
   Input: "/path/to/resource"
   Output: "/b9bCOhqZsvU9XxGOMk6d8QFQPTuMlsQKDBhAbc77JvsdRj0kxiFipunATQmm
            CkNhAe0BPP2EqQoxORElY_ukfUYSrr9mIMfiO9joa3Kn5RS7eSKr"
+
+B.6.  Test Vector 6: URI with Query Parameters
+
+  Input: "https://example.com/search?q=test&limit=10"
+  Output: "https://HOGo9vauZ3b3xsPNPQng5apSzL5V7QW94C7USgN8cl2BBtuWmxTsI
+           Ij59ka3KeDsaqXFGnKgW9aLLR36YvUf9ORkMnVE5PTR_3DiO43hL9WjdSu7L9
+           FN"
+
+B.7.  Test Vector 7: URI with Fragment
+
+  Input: "https://docs.example.com/guide#installation"
+  Output: "https://ypHTiw0JUMcr4bUjQH9Dxo8wGWHyfFlLq8VrOE-zX6IbgLFxYX_Jm
+           2hzivywvrpIBWa-9Jl6nSZLq2pd35QwkDsc1-_Kao2BvyBB19ndu1PpwQv1wy
+           uA"
+
+B.8.  Test Vector 8: URI with Query and Fragment
+
+  Input: "/api/v2/users?id=123#profile"
+  Output: "/b9bCOhqZsvU9XxGOMk6d8QFQwcP2C3bJVNVZDge7zfub_ai4x6LaUlXp-XjZ
+           XOgZlLloIbasK-JKlbeKeKV2rctq5bX9zQh1KogN2zaggTMZioUb4kwGIKp8Z
+           y744xQwGDG64n6GhN56XEM8LvBfJuEj6ZgsjeLbTPIMbCmO0pJhzVSh"
 
 Author's Address
 
