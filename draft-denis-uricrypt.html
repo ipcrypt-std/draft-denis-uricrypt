@@ -2216,17 +2216,22 @@ function extract_components(uri_string):
 
   components = []
   while path is not empty:
-     // Find the next terminator ('/', '?', or '#')
-     terminator_pos = find_first_of("/", "?", "#", path)
+     terminator_pos = find_next_terminator(path)
      if terminator_pos found:
-        component = substring(0, terminator_pos + 1)
-        path = substring(terminator_pos + 1)
+        component = substring(path, 0, terminator_pos + 1)
+        path = substring(path, terminator_pos + 1)
         components.append(component)
      else:
         components.append(path)
         path = ""
 
   return (scheme, components)
+
+function find_next_terminator(path):
+  for i from 0 to length(path) - 1:
+     if path[i] == '/' or path[i] == '?' or path[i] == '#':
+        return i
+  return not_found
 </pre><a href="#appendix-A.1-1" class="pilcrow">¶</a>
 </div>
 </section>
