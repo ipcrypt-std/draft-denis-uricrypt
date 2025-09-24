@@ -1722,13 +1722,13 @@ keystream for each component<a href="#section-4.1-3.2.1" class="pilcrow">¶</a><
 <pre>
   Input: len(key) || key || len(context) || context
 
-  +------------------------------------------------------+
+  +-----------------------------------------------------+
   | base_xof = TurboSHAKE128(domain_sep=0x1F)           |
   | base_xof.update(len(secret_key))                    |
   | base_xof.update(secret_key)                         |
   | base_xof.update(len(context))                       |
   | base_xof.update(context)                            |
-  +------------------------------------------------------+
+  +-----------------------------------------------------+
                             |
                             v
                +------------------------+
