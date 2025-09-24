@@ -244,7 +244,36 @@ The final output is encoded using URL-safe base64 {{!RFC4648}} without padding.
 # Algorithm Specification
 
 This section provides the complete algorithms for encryption and
-decryption.
+decryption. The following functions and operations are used throughout
+the algorithms:
+
+* `TurboSHAKE128()`: Creates a new TurboSHAKE128 hash instance with domain separation parameter 0x1F. This function produces an extensible output function (XOF) that can generate arbitrary-length outputs.
+
+* `.update(data)`: Absorbs the provided data into the hash state. The data is processed sequentially and updates the internal state of the hash function.
+
+* `.read(length)`: Squeezes the specified number of bytes from the hash function's output. Each call continues from where the previous read left off, producing a continuous stream of pseudorandom bytes.
+
+* `.clone()`: Creates a new hash instance with an identical internal state to the original. This enables multiple independent computation paths from the same initial state.
+
+* XOR operation: The bitwise exclusive OR operation between two byte sequences of equal length. This operation is used to combine plaintext with keystream for encryption, and ciphertext with keystream for decryption.
+
+* `base64url_encode(data)`: Converts binary data to a base64 string using URL-safe encoding (replacing '+' with '-' and '/' with '_') and omitting padding characters.
+
+* `base64url_decode(string)`: Converts a URL-safe base64 string back to binary data, automatically handling the absence of padding characters.
+
+* `Stream(data)`: Creates a sequential reader for binary data, enabling byte-by-byte or block-based access to the contents.
+
+* `constant_time_compare(a, b)`: Compares two byte sequences in constant time, regardless of their contents. This prevents timing attacks by ensuring the comparison duration does not depend on which bytes differ.
+
+* `len(data)`: Returns the length of the provided data in bytes.
+
+* concatenated with: The operation of joining two byte sequences end-to-end to form a single sequence.
+
+* `zeros(count)`: Generates a sequence of zero-valued bytes of the specified length, used for padding.
+
+* `remove_padding(data)`: Removes trailing zero bytes from a byte sequence to recover the original data length.
+
+* `join(components)`: Combines multiple path components into a single path string using '/' as the separator between components.
 
 ## Encryption Algorithm
 
