@@ -431,7 +431,7 @@ For each component, the encryption process follows a precise sequence
 that ensures both confidentiality and authenticity:
 
 1.  Update `components_xof` with the component plaintext
-2.  Generate SIV from `components_xof` (16 bytes)
+2.  Squeeze the SIV from `components_xof` (16 bytes). This requires cloning `components_xof` before reading, as reading may finalize the XOF.
 3.  Create `keystream_xof` by cloning `base_keystream_xof` and updating it with SIV
 4.  Calculate padding needed for base64 encoding
 5.  Generate a keystream of length `(component_length + padding)`
