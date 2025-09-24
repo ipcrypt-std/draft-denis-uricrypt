@@ -316,7 +316,7 @@ Table of Contents
 
    9.  If mismatch, return error
 
-   Any teampering with the encrypted data will cause the SIV comparison
+   Any tampering with the encrypted data will cause the SIV comparison
    to fail.
 
 4.4.  Padding and Encoding
@@ -384,8 +384,8 @@ Table of Contents
 
    1.  Split encrypted URI into scheme and base64 part
 
-   2.  decoded = base64url_decode(base64_part).  If decode fails, return
-       error
+   2.  decoded = base64url_decode(base64_part).  If decoding fails,
+       return error
 
    3.  Initialize hashers as described in Section 4.1
 
@@ -393,7 +393,7 @@ Table of Contents
 
    5.  input_stream = Stream(decoded)
 
-   6.  While input_stream not empty:
+   6.  While input_stream is not empty:
 
        *  SIV = input_stream.read(16).  If not enough bytes, return
           error
@@ -634,7 +634,7 @@ Table of Contents
 
    function extract_components(uri_string):
      if uri_string contains "://":
-        scheme = substring before "://"
+        scheme = substring up to and including "://"
         path = substring after "://"
      else:
         scheme = ""
@@ -644,7 +644,7 @@ Table of Contents
         path = substring after first "/"
 
      components = []
-     while path not empty:
+     while path is not empty:
         slash_pos = find("/", path)
         if slash_pos found:
            component = substring(0, slash_pos + 1)
@@ -742,7 +742,7 @@ Table of Contents
 function uricrypt_decrypt(secret_key, context, encrypted_uri):
   // Split scheme and base64
   if encrypted_uri contains "://":
-     scheme = substring before "://"
+     scheme = substring up to and including "://"
      base64_part = substring after "://"
   else:
      scheme = ""

@@ -1544,7 +1544,7 @@ base_keystream_hasher.update("KS")
             <p id="section-4.2-2.2.1">Generate SIV from <code>components_hasher</code> (16 bytes)<a href="#section-4.2-2.2.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-4.2-2.3">
-            <p id="section-4.2-2.3.1">Create <code>keystream_hasher</code> by cloning <code>base_keystream_hashe</code>r and updating with SIV<a href="#section-4.2-2.3.1" class="pilcrow">¶</a></p>
+            <p id="section-4.2-2.3.1">Create <code>keystream_hasher</code> by cloning <code>base_keystream_hasher</code> and updating with SIV<a href="#section-4.2-2.3.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-4.2-2.4">
             <p id="section-4.2-2.4.1">Calculate padding needed for base64 encoding<a href="#section-4.2-2.4.1" class="pilcrow">¶</a></p>
@@ -1598,7 +1598,7 @@ base_keystream_hasher.update("KS")
             <p id="section-4.3-2.9.1">If mismatch, return <code>error</code><a href="#section-4.3-2.9.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
-<p id="section-4.3-3">Any teampering with the encrypted data will cause the SIV comparison to fail.<a href="#section-4.3-3" class="pilcrow">¶</a></p>
+<p id="section-4.3-3">Any tampering with the encrypted data will cause the SIV comparison to fail.<a href="#section-4.3-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="padding-and-encoding">
@@ -1693,7 +1693,7 @@ decryption.<a href="#section-5-1" class="pilcrow">¶</a></p>
             <p id="section-5.2-4.1.1">Split encrypted URI into scheme and base64 part<a href="#section-5.2-4.1.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-5.2-4.2">
-            <p id="section-5.2-4.2.1"><code>decoded = base64url_decode(base64_part)</code>. If <code>decode fails</code>, return <code>error</code><a href="#section-5.2-4.2.1" class="pilcrow">¶</a></p>
+            <p id="section-5.2-4.2.1"><code>decoded = base64url_decode(base64_part)</code>. If decoding fails, return <code>error</code><a href="#section-5.2-4.2.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-5.2-4.3">
             <p id="section-5.2-4.3.1">Initialize hashers as described in <a href="#hasher-init" class="auto internal xref">Section 4.1</a><a href="#section-5.2-4.3.1" class="pilcrow">¶</a></p>
@@ -1705,7 +1705,7 @@ decryption.<a href="#section-5-1" class="pilcrow">¶</a></p>
             <p id="section-5.2-4.5.1"><code>input_stream = Stream(decoded)</code><a href="#section-5.2-4.5.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-5.2-4.6">
-            <p id="section-5.2-4.6.1">While input_stream not empty:<a href="#section-5.2-4.6.1" class="pilcrow">¶</a></p>
+            <p id="section-5.2-4.6.1">While input_stream is not empty:<a href="#section-5.2-4.6.1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.2-4.6.2.1">
                 <p id="section-5.2-4.6.2.1.1"><code>SIV = input_stream.read(16)</code>. If not enough bytes, return <code>error</code><a href="#section-5.2-4.6.2.1.1" class="pilcrow">¶</a></p>
@@ -1929,7 +1929,7 @@ attacks.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
             <p id="section-7.6-2.1.1">Key strength: Minimum 128-bit security with 16-byte keys<a href="#section-7.6-2.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-7.6-2.2">
-            <p id="section-7.6-2.2.1">Collision resistance: 2^64 birthday bound for SIV collisions<a href="#section-7.6-2.2.1" class="pilcrow">¶</a></p>
+            <p id="section-7.6-2.2.1">Collision resistance: 2<sup>64</sup> birthday bound for SIV collisions<a href="#section-7.6-2.2.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-7.6-2.3">
             <p id="section-7.6-2.3.1">Authentication security: 2<sup>-128</sup> probability of successful forgery<a href="#section-7.6-2.3.1" class="pilcrow">¶</a></p>
@@ -2034,7 +2034,7 @@ NOT RECOMMENDED.<a href="#section-8-2.7.1" class="pilcrow">¶</a></p>
 <pre>
 function extract_components(uri_string):
   if uri_string contains "://":
-     scheme = substring before "://"
+     scheme = substring up to and including "://"
      path = substring after "://"
   else:
      scheme = ""
@@ -2044,7 +2044,7 @@ function extract_components(uri_string):
      path = substring after first "/"
 
   components = []
-  while path not empty:
+  while path is not empty:
      slash_pos = find("/", path)
      if slash_pos found:
         component = substring(0, slash_pos + 1)
@@ -2166,7 +2166,7 @@ function uricrypt_encrypt(secret_key, context, uri_string):
 function uricrypt_decrypt(secret_key, context, encrypted_uri):
   // Split scheme and base64
   if encrypted_uri contains "://":
-     scheme = substring before "://"
+     scheme = substring up to and including "://"
      base64_part = substring after "://"
   else:
      scheme = ""
