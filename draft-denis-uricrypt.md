@@ -824,3 +824,29 @@ Input: "/path/to/resource"
 Output: "/b9bCOhqZsvU9XxGOMk6d8QFQPTuMlsQKDBhAbc77JvsdRj0kxiFipunATQmm
          CkNhAe0BPP2EqQoxORElY_ukfUYSrr9mIMfiO9joa3Kn5RS7eSKr"
 ~~~
+
+## Test Vector 6: URI with Query Parameters
+
+~~~
+Input: "https://example.com/search?q=test&limit=10"
+Output: "https://HOGo9vauZ3b3xsPNPQng5apSzL5V7QW94C7USgN8mHZJ337AKSWOu
+         cUwMuD-uUfF98xLVRrLCRf-Yl-gF4TxQ5wJlSzNhxIrZOB4VQ-bz6GWY1fTXO
+         XhBxRbGQRZu2k"
+~~~
+
+## Test Vector 7: URI with Fragment
+
+~~~
+Input: "https://docs.example.com/guide#installation"
+Output: "https://K3q7_GIFhVNvP_L1Fy7T8MXOFw6ZME6u_VJsG1eFXOhrILJEGFBgJ
+         zGP85QbmRJBKkF-u2yHD7pXgWfcCLgCUMZPv2F5bxIrFJlXQRvKZN8hkzwgM2
+         GR1vYg"
+~~~
+
+## Test Vector 8: URI with Query and Fragment
+
+~~~
+Input: "/api/v2/users?id=123#profile"
+Output: "/FkVr81Y_rQCgdBCQv-E0KiWcx3JL2VLEOj6hRrJGlDl37STgFhzP9KJXRGo8
+         xEPBT9kNQzLFhR4vPbZ1RJ4XKgFrPy_QlYXBwTrKJzNhM8Lg5hR"
+~~~
