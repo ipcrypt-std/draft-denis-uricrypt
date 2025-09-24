@@ -1915,7 +1915,7 @@ the algorithms:<a href="#section-5-1" class="pilcrow">¶</a></p>
                 <p id="section-5.1-4.4.2.1.1"><code>Update components_xof with component</code><a href="#section-5.1-4.4.2.1.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.1-4.4.2.2">
-                <p id="section-5.1-4.4.2.2.1"><code>SIV = components_xof.read(16)</code><a href="#section-5.1-4.4.2.2.1" class="pilcrow">¶</a></p>
+                <p id="section-5.1-4.4.2.2.1"><code>SIV = components_xof.clone().read(16)</code><a href="#section-5.1-4.4.2.2.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.1-4.4.2.3">
                 <p id="section-5.1-4.4.2.3.1"><code>keystream_xof = base_keystream_xof.clone()</code><a href="#section-5.1-4.4.2.3.1" class="pilcrow">¶</a></p>
@@ -2004,7 +2004,7 @@ the algorithms:<a href="#section-5-1" class="pilcrow">¶</a></p>
                 <p id="section-5.2-4.6.2.9.1">Update <code>components_xof</code> with component<a href="#section-5.2-4.6.2.9.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-4.6.2.10">
-                <p id="section-5.2-4.6.2.10.1"><code>expected_SIV = components_xof.read(16)</code><a href="#section-5.2-4.6.2.10.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-4.6.2.10.1"><code>expected_SIV = components_xof.clone().read(16)</code><a href="#section-5.2-4.6.2.10.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-4.6.2.11">
                 <p id="section-5.2-4.6.2.11.1">If <code>constant_time_compare(SIV, expected_SIV) == false</code>: return <code>error</code><a href="#section-5.2-4.6.2.11.1" class="pilcrow">¶</a></p>

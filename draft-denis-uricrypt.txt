@@ -607,7 +607,7 @@ Table of Contents
 
        *  Update components_xof with component
 
-       *  SIV = components_xof.read(16)
+       *  SIV = components_xof.clone().read(16)
 
        *  keystream_xof = base_keystream_xof.clone()
 
@@ -669,7 +669,7 @@ Table of Contents
 
        *  Update components_xof with component
 
-       *  expected_SIV = components_xof.read(16)
+       *  expected_SIV = components_xof.clone().read(16)
 
        *  If constant_time_compare(SIV, expected_SIV) == false: return
           error
