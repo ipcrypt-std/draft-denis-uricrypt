@@ -44,7 +44,9 @@ encrypted prefixes.
 
 The scheme uses an extendable-output function (XOF) as its cryptographic primitive
 and provides authenticated encryption for each component, preventing
-tampering, reordering, or mixing of encrypted segments.
+tampering, reordering, or mixing of encrypted segments. URICrypt is a
+reversible encryption scheme: encrypted URIs can be fully decrypted to
+recover the original URIs, but only with possession of the secret key.
 
 ## Use Cases and Motivations
 
@@ -463,7 +465,9 @@ These trade-offs are intentional and necessary for the prefix-preserving functio
 # Security Considerations
 
 URICrypt provides confidentiality and integrity for URI paths while
-preserving prefix relationships. The security properties depend on:
+preserving prefix relationships. The encryption is fully reversible:
+encrypted URIs can be decrypted to recover the original plaintext URIs,
+but only with knowledge of the secret key. The security properties depend on:
 
 * Key Secrecy: The security of URICrypt depends entirely on the
   secrecy of the secret key. Keys MUST be generated using a
