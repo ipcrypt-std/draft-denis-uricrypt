@@ -605,7 +605,7 @@ Table of Contents
 
 7.5.  Key Commitment
 
-   URICrypt provides full key-commitment security:
+   URICrypt provides full key-commitment security.
 
    The scheme is fully key-committing, meaning that a ciphertext can
    only be decrypted with the exact key that was used to encrypt it.  It
