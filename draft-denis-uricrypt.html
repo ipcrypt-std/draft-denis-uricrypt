@@ -2145,7 +2145,7 @@ function uricrypt_encrypt(secret_key, context, uri_string):
   // Extract components
   (scheme, components) = extract_components(uri_string)
 
-  // Initialize hashers
+  // Initialize hashers with secret key and context
   (components_hasher, base_keystream_hasher) =
       initialize_hashers(secret_key, context)
   if error: return error
@@ -2154,34 +2154,34 @@ function uricrypt_encrypt(secret_key, context, uri_string):
 
   // Process each component
   for component in components:
-     // Update components hasher
+     // Update components hasher for SIV computation
      components_hasher.update(component)
 
-     // Generate SIV
+     // Generate 16-byte Synthetic Initialization Vector (SIV)
      siv = components_hasher.squeeze(16)
 
      // Create keystream hasher for this component
      keystream_hasher = base_keystream_hasher.clone()
      keystream_hasher.update(siv)
 
-     // Calculate padding
+     // Calculate padding for base64 encoding alignment
      component_len = len(component)
      padding_len = (3 - (16 + component_len) % 3) % 3
 
      // Generate keystream
      keystream = keystream_hasher.squeeze(component_len + padding_len)
 
-     // Pad component
+     // Pad component to align with base64 encoding requirements
      padded_component = component + byte_array(padding_len)
 
-     // Encrypt
+     // Encrypt using XOR with keystream
      encrypted_part = xor_bytes(padded_component, keystream)
 
      // Append to output
      encrypted_output.extend(siv)
      encrypted_output.extend(encrypted_part)
 
-  // Base64 encode
+  // Base64 encode with URL-safe characters and no padding
   base64_output = base64_urlsafe_no_pad_encode(encrypted_output)
 
   // Return with scheme
@@ -2212,7 +2212,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
   catch:
      return error("Decryption failed")
 
-  // Initialize hashers
+  // Initialize hashers with secret key and context
   (components_hasher, base_keystream_hasher) =
       initialize_hashers(secret_key, context)
   if error: return error
@@ -2231,12 +2231,12 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      keystream_hasher = base_keystream_hasher.clone()
      keystream_hasher.update(siv)
 
-     // Determine component length
+     // Determine component length by checking padding constraints
      remaining = input_stream.remaining()
      if remaining == 0:
         return error("Decryption failed")
 
-     // Find valid component length by checking padding
+     // Find valid component length by checking padding alignment
      component_data = None
      for possible_len in range(1, remaining + 1):
         total_len = 16 + possible_len
@@ -2255,7 +2255,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      keystream = keystream_hasher.squeeze(len(encrypted_part))
      padded_plaintext = xor_bytes(encrypted_part, keystream)
 
-     // Remove padding
+     // Remove padding bytes added for base64 alignment
      padding_len = (3 - (16 + len(encrypted_part)) % 3) % 3
      component = padded_plaintext[:-padding_len] if padding_len &gt; 0 else padded_plaintext
 
@@ -2265,7 +2265,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      // Generate expected SIV
      expected_siv = components_hasher.squeeze(16)
 
-     // Authenticate (constant-time comparison)
+     // Authenticate using constant-time comparison to prevent timing attacks
      if not constant_time_equal(siv, expected_siv):
         return error("Decryption failed")
 
@@ -2291,19 +2291,20 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
 <div class="alignLeft art-text artwork" id="section-10.5-1">
 <pre>
 function calculate_padding(component_len):
+  // Calculate padding needed for base64 encoding alignment
   return (3 - (16 + component_len) % 3) % 3
 
 function base64_urlsafe_no_pad_encode(data):
   // Use standard base64 encoding
   encoded = standard_base64_encode(data)
-  // Make URL-safe and remove padding
+  // Make URL-safe and remove padding for URI compatibility
   encoded = encoded.replace('+', '-')
                    .replace('/', '_')
                    .rstrip('=')
   return encoded
 
 function base64_urlsafe_no_pad_decode(encoded):
-  // Add padding if needed
+  // Add padding if needed for standard decoder
   padding = (4 - len(encoded) % 4) % 4
   if padding &gt; 0:
      encoded = encoded + ('=' * padding)
