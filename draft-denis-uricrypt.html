@@ -1317,7 +1317,9 @@ sharing common prefixes produce ciphertexts that also share common
 encrypted prefixes.<a href="#section-1-2" class="pilcrow">¶</a></p>
 <p id="section-1-3">The scheme uses an extendable-output function (XOF) as its cryptographic primitive
 and provides authenticated encryption for each component, preventing
-tampering, reordering, or mixing of encrypted segments.<a href="#section-1-3" class="pilcrow">¶</a></p>
+tampering, reordering, or mixing of encrypted segments. URICrypt is a
+reversible encryption scheme: encrypted URIs can be fully decrypted to
+recover the original URIs, but only with possession of the secret key.<a href="#section-1-3" class="pilcrow">¶</a></p>
 <div id="use-cases-and-motivations">
 <section id="section-1.1">
         <h3 id="name-use-cases-and-motivations">
@@ -2036,7 +2038,9 @@ attacks.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
 <a href="#section-8" class="section-number selfRef">8. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
       </h2>
 <p id="section-8-1">URICrypt provides confidentiality and integrity for URI paths while
-preserving prefix relationships. The security properties depend on:<a href="#section-8-1" class="pilcrow">¶</a></p>
+preserving prefix relationships. The encryption is fully reversible:
+encrypted URIs can be decrypted to recover the original plaintext URIs,
+but only with knowledge of the secret key. The security properties depend on:<a href="#section-8-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-8-2.1">
           <p id="section-8-2.1.1">Key Secrecy: The security of URICrypt depends entirely on the
