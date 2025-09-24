@@ -737,21 +737,25 @@ context: "test-context"
 
 ~~~
 Input: "https://example.com/a/b/c"
-Output: "https://HOGo9vauZ3b3xsPNPQng5apSzL5V7QW94C7USgN8mHZJ337AKSWOucUwMuD-uUfF95SsSHCNgBkXUnH1uGll_YtBltXSqKEHNcYJJwbdFdhfWz19"
+Output: "https://HOGo9vauZ3b3xsPNPQng5apSzL5V7QW94C7USgN8mHZJ337AKSWOu
+         cUwMuD-uUfF95SsSHCNgBkXUnH1uGll_YtBltXSqKEHNcYJJwbdFdhfWz19"
 ~~~
 
 ## Test Vector 2: Path-Only URI
 
 ~~~
 Input: "/a/b/c"
-Output: "/b9bCOhqZsvU9XxGOMk6d8QFQhTIdI_xYKpds2lWXpZCms5-az9wtfUft3rec3d9YkUo0N7VcxO5MXfxE5UobvgTJX8UpRdNN"
+Output: "/b9bCOhqZsvU9XxGOMk6d8QFQhTIdI_xYKpds2lWXpZCms5-az9wtfUft3rec
+         3d9YkUo0N7VcxO5MXfxE5UobvgTJX8UpRdNN"
 ~~~
 
 ## Test Vector 3: Multi-Component Path
 
 ~~~
 Input: "https://cdn.example.com/videos/2025/03/file.mp4"
-Output: "https://hxUM2N3txwYjGxjvCpWn30SznxR0v0fDbkSQgCTXCUu7Rq8iSbWP40OvYxKs9zC3kw1JNzAc4Wuj7RZvRd0VUprJWLs5KJPnWsA9Kguxa_J7XviTS3GTqf-XZdPxYyq1Y1MXVE9_4ojHwm6jBDUkVthAkuNe5Cqk_h6d"
+Output: "https://hxUM2N3txwYjGxjvCpWn30SznxR0v0fDbkSQgCTXCUu7Rq8iSbWP4
+         0OvYxKs9zC3kw1JNzAc4Wuj7RZvRd0VUprJWLs5KJPnWsA9Kguxa_J7XviTS3G
+         Tqf-XZdPxYyq1Y1MXVE9_4ojHwm6jBDUkVthAkuNe5Cqk_h6d"
 ~~~
 
 ## Test Vector 4: Root with Scheme
@@ -765,5 +769,6 @@ Output: "https://HOGo9vauZ3b3xsPNPQng5apSzL5V7QW94C7USgN8"
 
 ~~~
 Input: "/path/to/resource"
-Output: "/b9bCOhqZsvU9XxGOMk6d8QFQPTuMlsQKDBhAbc77JvsdRj0kxiFipunATQmmCkNhAe0BPP2EqQoxORElY_ukfUYSrr9mIMfiO9joa3Kn5RS7eSKr"
+Output: "/b9bCOhqZsvU9XxGOMk6d8QFQPTuMlsQKDBhAbc77JvsdRj0kxiFipunATQmm
+         CkNhAe0BPP2EqQoxORElY_ukfUYSrr9mIMfiO9joa3Kn5RS7eSKr"
 ~~~
