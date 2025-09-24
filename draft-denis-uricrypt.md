@@ -208,7 +208,7 @@ For each component, the encryption process is:
 
 1.  Update `components_hasher` with the component plaintext
 2.  Generate SIV from `components_hasher` (16 bytes)
-3.  Create `keystream_hasher` by cloning `base_keystream_hashe`r and updating with SIV
+3.  Create `keystream_hasher` by cloning `base_keystream_hasher` and updating with SIV
 4.  Calculate padding needed for base64 encoding
 5.  Generate keystream of length `(component_length + padding)`
 6.  XOR padded component with keystream
@@ -231,7 +231,7 @@ For each encrypted component, the decryption process is:
 8.  Compare expected SIV with received SIV (constant-time)
 9.  If mismatch, return `error`
 
-Any teampering with the encrypted data will cause the SIV comparison to fail.
+Any tampering with the encrypted data will cause the SIV comparison to fail.
 
 ## Padding and Encoding
 
@@ -280,11 +280,11 @@ Output: decrypted_uri or error
 Steps:
 
 1.  Split encrypted URI into scheme and base64 part
-2.  `decoded = base64url_decode(base64_part)`. If `decode fails`, return `error`
+2.  `decoded = base64url_decode(base64_part)`. If decoding fails, return `error`
 3.  Initialize hashers as described in {{hasher-init}}
 4.  `decrypted_components = empty list`
 5.  `input_stream = Stream(decoded)`
-6.  While input_stream not empty:
+6.  While input_stream is not empty:
       - `SIV = input_stream.read(16)`. If not enough bytes, return `error`
       - `keystream_hasher = base_keystream_hasher.clone()`
       - `keystream_hasher.update(SIV)`
@@ -409,7 +409,7 @@ Key Recovery: TurboSHAKE128's security properties ensure that observing cipherte
 The security of URICrypt is bounded by:
 
 - Key strength: Minimum 128-bit security with 16-byte keys
-- Collision resistance: 2^64 birthday bound for SIV collisions
+- Collision resistance: 2<sup>64</sup> birthday bound for SIV collisions
 - Authentication security: 2<sup>-128</sup> probability of successful forgery
 - Computational security: Based on TurboSHAKE128's proven security as an XOF
 
@@ -472,7 +472,7 @@ This document has no actions for IANA.
 ~~~
 function extract_components(uri_string):
   if uri_string contains "://":
-     scheme = substring before "://"
+     scheme = substring up to and including "://"
      path = substring after "://"
   else:
      scheme = ""
@@ -482,7 +482,7 @@ function extract_components(uri_string):
      path = substring after first "/"
 
   components = []
-  while path not empty:
+  while path is not empty:
      slash_pos = find("/", path)
      if slash_pos found:
         component = substring(0, slash_pos + 1)
@@ -586,7 +586,7 @@ function uricrypt_encrypt(secret_key, context, uri_string):
 function uricrypt_decrypt(secret_key, context, encrypted_uri):
   // Split scheme and base64
   if encrypted_uri contains "://":
-     scheme = substring before "://"
+     scheme = substring up to and including "://"
      base64_part = substring after "://"
   else:
      scheme = ""
