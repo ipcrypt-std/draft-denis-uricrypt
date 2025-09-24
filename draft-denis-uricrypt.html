@@ -1384,9 +1384,9 @@ shown here.<a href="#section-2-1" class="pilcrow">¶</a></p>
           <p id="section-2-3.1.1">URI: Uniform Resource Identifier as defined in <span>[<a href="#RFC3986" class="cite xref">RFC3986</a>]</span>.<a href="#section-2-3.1.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-2-3.2">
-          <p id="section-2-3.2.1">URI Component: A segment of a URI path, typically separated by
-‘/’ characters. For encryption purposes, components include the
-trailing separator except for the final component.<a href="#section-2-3.2.1" class="pilcrow">¶</a></p>
+          <p id="section-2-3.2.1">URI Component: A segment of a URI path, terminated by ‘/’, ‘?’, or
+‘#’ characters. For encryption purposes, components include the
+trailing terminator except for the final component.<a href="#section-2-3.2.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-2-3.3">
           <p id="section-2-3.3.1">Scheme: The URI scheme (e.g., “https://”) which is preserved in
@@ -1432,7 +1432,8 @@ decryption.<a href="#section-3-1" class="pilcrow">¶</a></p>
         </h3>
 <p id="section-3.1-1">Before encryption, a URI must be split into its scheme and path
 components. The path is further divided into individual components for
-chained encryption.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+chained encryption. Components are terminated by ‘/’, ‘?’, or ‘#’
+characters, which allows proper handling of query strings and fragments.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
 <div id="full-uris">
 <section id="section-3.1.1">
           <h4 id="name-full-uris">
@@ -1452,8 +1453,34 @@ Components:
 - Component 4: "c"
 </pre><a href="#section-3.1.1-2" class="pilcrow">¶</a>
 </div>
-<p id="section-3.1.1-3">Note that all components except the last include the trailing ‘/’
-character. This ensures proper reconstruction during decryption.<a href="#section-3.1.1-3" class="pilcrow">¶</a></p>
+<p id="section-3.1.1-3">For a URI with query parameters:<a href="#section-3.1.1-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.1.1-4">
+<pre>
+Input:  "https://example.com/path?foo=bar&amp;baz=qux"
+
+Components:
+
+- Scheme: "https://"
+- Component 1: "example.com/"
+- Component 2: "path?"
+- Component 3: "foo=bar&amp;baz=qux"
+</pre><a href="#section-3.1.1-4" class="pilcrow">¶</a>
+</div>
+<p id="section-3.1.1-5">For a URI with a fragment:<a href="#section-3.1.1-5" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.1.1-6">
+<pre>
+Input:  "https://example.com/path#section"
+
+Components:
+
+- Scheme: "https://"
+- Component 1: "example.com/"
+- Component 2: "path#"
+- Component 3: "section"
+</pre><a href="#section-3.1.1-6" class="pilcrow">¶</a>
+</div>
+<p id="section-3.1.1-7">Note that all components except the last include the trailing terminator
+character (‘/’, ‘?’, or ‘#’). This ensures proper reconstruction during decryption.<a href="#section-3.1.1-7" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="path-only-uris">
@@ -1474,8 +1501,22 @@ Components:
 - Component 3: "c"
 </pre><a href="#section-3.1.2-2" class="pilcrow">¶</a>
 </div>
-<p id="section-3.1.2-3">The leading ‘/’ is not treated as a separate component but is
-implied during reconstruction.<a href="#section-3.1.2-3" class="pilcrow">¶</a></p>
+<p id="section-3.1.2-3">For a path with query parameters:<a href="#section-3.1.2-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.1.2-4">
+<pre>
+Input:  "/path/to/file?param=value"
+
+Components:
+
+- Scheme: "" (empty)
+- Component 1: "path/"
+- Component 2: "to/"
+- Component 3: "file?"
+- Component 4: "param=value"
+</pre><a href="#section-3.1.2-4" class="pilcrow">¶</a>
+</div>
+<p id="section-3.1.2-5">The leading ‘/’ is not treated as a separate component but is
+implied during reconstruction.<a href="#section-3.1.2-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1675,7 +1716,7 @@ the algorithms:<a href="#section-5-1" class="pilcrow">¶</a></p>
           <p id="section-5-2.13.1"><code>remove_padding(data)</code>: Removes trailing zero bytes from a byte sequence to recover the original data length.<a href="#section-5-2.13.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-5-2.14">
-          <p id="section-5-2.14.1"><code>join(components)</code>: Combines multiple path components into a single path string using ‘/’ as the separator between components.<a href="#section-5-2.14.1" class="pilcrow">¶</a></p>
+          <p id="section-5-2.14.1"><code>join(components)</code>: Combines multiple path components into a single path string, preserving the terminator characters (‘/’, ‘?’, ‘#’) that are included in each component.<a href="#section-5-2.14.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
 <div id="encryption-algorithm">
@@ -2166,10 +2207,11 @@ function extract_components(uri_string):
 
   components = []
   while path is not empty:
-     slash_pos = find("/", path)
-     if slash_pos found:
-        component = substring(0, slash_pos + 1)
-        path = substring(slash_pos + 1)
+     // Find the next terminator ('/', '?', or '#')
+     terminator_pos = find_first_of("/", "?", "#", path)
+     if terminator_pos found:
+        component = substring(0, terminator_pos + 1)
+        path = substring(terminator_pos + 1)
         components.append(component)
      else:
         components.append(path)
