@@ -1620,7 +1620,52 @@ padding characters.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
 <a href="#section-5" class="section-number selfRef">5. </a><a href="#name-algorithm-specification" class="section-name selfRef">Algorithm Specification</a>
       </h2>
 <p id="section-5-1">This section provides the complete algorithms for encryption and
-decryption.<a href="#section-5-1" class="pilcrow">¶</a></p>
+decryption. The following functions and operations are used throughout
+the algorithms:<a href="#section-5-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5-2.1">
+          <p id="section-5-2.1.1"><code>TurboSHAKE128()</code>: Creates a new TurboSHAKE128 hash instance with domain separation parameter 0x1F. This function produces an extensible output function (XOF) that can generate arbitrary-length outputs.<a href="#section-5-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.2">
+          <p id="section-5-2.2.1"><code>.update(data)</code>: Absorbs the provided data into the hash state. The data is processed sequentially and updates the internal state of the hash function.<a href="#section-5-2.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.3">
+          <p id="section-5-2.3.1"><code>.read(length)</code>: Squeezes the specified number of bytes from the hash function’s output. Each call continues from where the previous read left off, producing a continuous stream of pseudorandom bytes.<a href="#section-5-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.4">
+          <p id="section-5-2.4.1"><code>.clone()</code>: Creates a new hash instance with an identical internal state to the original. This enables multiple independent computation paths from the same initial state.<a href="#section-5-2.4.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.5">
+          <p id="section-5-2.5.1">XOR operation: The bitwise exclusive OR operation between two byte sequences of equal length. This operation is used to combine plaintext with keystream for encryption, and ciphertext with keystream for decryption.<a href="#section-5-2.5.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.6">
+          <p id="section-5-2.6.1"><code>base64url_encode(data)</code>: Converts binary data to a base64 string using URL-safe encoding (replacing ‘+’ with ‘-‘ and ‘/’ with ‘_’) and omitting padding characters.<a href="#section-5-2.6.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.7">
+          <p id="section-5-2.7.1"><code>base64url_decode(string)</code>: Converts a URL-safe base64 string back to binary data, automatically handling the absence of padding characters.<a href="#section-5-2.7.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.8">
+          <p id="section-5-2.8.1"><code>Stream(data)</code>: Creates a sequential reader for binary data, enabling byte-by-byte or block-based access to the contents.<a href="#section-5-2.8.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.9">
+          <p id="section-5-2.9.1"><code>constant_time_compare(a, b)</code>: Compares two byte sequences in constant time, regardless of their contents. This prevents timing attacks by ensuring the comparison duration does not depend on which bytes differ.<a href="#section-5-2.9.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.10">
+          <p id="section-5-2.10.1"><code>len(data)</code>: Returns the length of the provided data in bytes.<a href="#section-5-2.10.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.11">
+          <p id="section-5-2.11.1">concatenated with: The operation of joining two byte sequences end-to-end to form a single sequence.<a href="#section-5-2.11.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.12">
+          <p id="section-5-2.12.1"><code>zeros(count)</code>: Generates a sequence of zero-valued bytes of the specified length, used for padding.<a href="#section-5-2.12.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.13">
+          <p id="section-5-2.13.1"><code>remove_padding(data)</code>: Removes trailing zero bytes from a byte sequence to recover the original data length.<a href="#section-5-2.13.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.14">
+          <p id="section-5-2.14.1"><code>join(components)</code>: Combines multiple path components into a single path string using ‘/’ as the separator between components.<a href="#section-5-2.14.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
 <div id="encryption-algorithm">
 <section id="section-5.1">
         <h3 id="name-encryption-algorithm">
