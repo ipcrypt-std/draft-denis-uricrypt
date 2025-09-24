@@ -36,11 +36,6 @@ functioning with encrypted URIs. The scheme provides authenticated
 encryption for each URI path component, preventing tampering,
 reordering, or mixing of encrypted segments.
 
-URICrypt uses TurboSHAKE128 as its cryptographic primitive and
-produces URL-safe base64 encoded ciphertexts. The scheme maintains
-prefix preservation: URIs sharing common path prefixes produce
-ciphertexts that also share common encrypted prefixes.
-
 --- middle
 
 # Introduction
