@@ -452,13 +452,27 @@ For each encrypted component, the decryption process is:
 
 1.  Read SIV from input (16 bytes)
 2.  Create `keystream_xof` by cloning `base_keystream_xof` and updating with SIV
-3.  Read encrypted component data (length determined from encoding)
-4.  Generate keystream and decrypt component
-5.  Remove padding to recover plaintext
-6.  Update `components_xof` with plaintext
-7.  Generate expected SIV from `components_xof`
-8.  Compare expected SIV with received SIV (constant-time)
-9.  If mismatch, return `error`
+3.  Decrypt bytes incrementally to determine component boundaries:
+    - Generate keystream bytes one at a time from the XOF
+    - XOR each encrypted byte with its corresponding keystream byte
+    - Check each decrypted byte for component terminators ('/', '?', '#')
+    - When a terminator is found, the component is complete
+    - Skip any padding bytes (null bytes) after the component
+4.  Update `components_xof` with the complete plaintext component (including terminator)
+5.  Generate expected SIV from `components_xof`
+6.  Compare expected SIV with received SIV (constant-time)
+7.  If mismatch, return `error`
+
+### Component Boundary Detection
+
+During decryption, component boundaries are discovered dynamically by examining the decrypted plaintext:
+
+- Each component (except possibly the last) ends with a terminator character ('/', '?', or '#')
+- When a terminator is encountered, we know the component is complete
+- After finding the terminator, we skip padding bytes to align to the next 3-byte boundary
+- The padding length can be calculated: `padding = (3 - ((SIV_size + bytes_read) % 3)) % 3`
+
+This approach eliminates the need for explicit length encoding, as the component structure itself provides the necessary boundary information.
 
 Any tampering with the encrypted data will cause the SIV comparison to fail.
 
@@ -548,16 +562,22 @@ Steps:
 2.  `decoded = base64url_decode(base64_part)`. If decoding fails, return `error`
 3.  Initialize XOF instances as described in {{xof-init}}
 4.  `decrypted_components = empty list`
-5.  `input_stream = Stream(decoded)`
-6.  While input_stream is not empty:
-      - `SIV = input_stream.read(16)`. If not enough bytes, return `error`
-      - `keystream_xof = base_keystream_xof.clone()`
-      - `keystream_xof.update(SIV)`
-      - Determine component length from remaining data and padding
-      - `encrypted_part = input_stream.read(component_length)`
-      - `keystream = keystream_xof.read(len(encrypted_part))`
-      - `padded_plaintext = encrypted_part XOR keystream`
-      - `component = remove_padding(padded_plaintext)`
+5.  `position = 0`
+6.  While `position < len(decoded)`:
+      - `SIV = decoded[position:position+16]`. If not enough bytes, return `error`
+      - `keystream_xof = base_keystream_xof.clone().update(SIV)`
+      - `component_start = position + 16`
+      - `component = empty byte array`
+      - `position = position + 16`
+      - While `position < len(decoded)`:
+        - `decrypted_byte = decoded[position] XOR keystream_xof.read(1)`
+        - `position = position + 1`
+        - If `decrypted_byte == 0x00`: continue (skip padding)
+        - `component.append(decrypted_byte)`
+        - If `decrypted_byte` is '/', '?', or '#':
+          - `total_len = position - component_start`
+          - `position = position + ((3 - ((16 + total_len) % 3)) % 3)`
+          - Break inner loop
       - Update `components_xof` with component
       - `expected_SIV = components_xof.clone().read(16)`
       - If `constant_time_compare(SIV, expected_SIV) == false`: return `error`
