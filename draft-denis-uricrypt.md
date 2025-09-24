@@ -428,8 +428,18 @@ that ensures both confidentiality and authenticity:
 6.  XOR padded component with keystream
 7.  Output SIV concatenated with `encrypted_component`
 
-The padding length is calculated as:
-`padding_len = (3 - (16 + component_len) % 3) % 3`
+The padding ensures clean base64url encoding without padding characters. Since
+base64 encoding works with groups of 3 bytes (producing 4 characters), we pad each
+`(SIV || encrypted_component)` pair to have a length that's a multiple of 3:
+
+~~~
+total_bytes = 16 (SIV) + component_len
+padding_len = (3 - total_bytes % 3) % 3
+~~~
+
+This formula calculates:
+- How many bytes are needed to reach the next multiple of 3
+- The outer modulo handles the case where `total_bytes` is already a multiple of 3
 
 Important: The `components_xof` maintains state across all components. After
 generating the SIV for component N, the XOF can be updated with component N+1's
@@ -454,11 +464,18 @@ Any tampering with the encrypted data will cause the SIV comparison to fail.
 
 ## Padding and Encoding
 
-Each encrypted component `(SIV || ciphertext)` is padded to make its
-length a multiple of 3 bytes, enabling clean base64 encoding without
-padding characters.
+To enable clean base64url encoding without padding characters ('='), each
+encrypted component pair `(SIV || ciphertext)` is padded to a multiple of 3 bytes.
+This is necessary because base64 encoding processes 3 bytes at a time to produce
+4 characters of output.
 
-The final output is encoded using URL-safe base64 {{!RFC4648}}.
+The padding calculation `(3 - (16 + component_len) % 3) % 3` ensures:
+- If `(16 + component_len) % 3 = 0`: no padding needed (already aligned)
+- If `(16 + component_len) % 3 = 1`: add 2 bytes of padding
+- If `(16 + component_len) % 3 = 2`: add 1 byte of padding
+
+The final output is encoded using URL-safe base64 {{!RFC4648}}, with '-' replacing
+'+' and '_' replacing '/' for URI compatibility.
 
 # Algorithm Specification
 
@@ -817,6 +834,8 @@ function uricrypt_encrypt(secret_key, context, uri_string):
      keystream_xof.update(siv)
 
      // Calculate padding for base64 encoding alignment
+     // The total bytes (SIV + component) must be a multiple of 3
+     // to produce clean base64 output without padding characters
      component_len = len(component)
      padding_len = (3 - (16 + component_len) % 3) % 3
 
@@ -932,7 +951,10 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
 ~~~
 function calculate_padding(component_len):
   // Calculate padding needed for base64 encoding alignment
-  return (3 - (16 + component_len) % 3) % 3
+  // The combined SIV (16 bytes) + component must be divisible by 3
+  // for clean base64 encoding without '=' padding characters
+  total_len = 16 + component_len
+  return (3 - total_len % 3) % 3
 
 function base64_urlsafe_no_pad_encode(data):
   // Use standard base64 encoding
