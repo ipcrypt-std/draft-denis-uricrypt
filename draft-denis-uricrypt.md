@@ -408,6 +408,13 @@ base_keystream_xof = base_xof.clone()
 base_keystream_xof.update("KS")
 ~~~
 
+Note on XOF cloning: The `.clone()` operation creates a new XOF instance with
+an identical internal state, preserving all previously absorbed data. After
+cloning, the original and cloned XOFs can be updated and read from
+independently. This allows the components_xof to maintain a running state
+across all components while base_keystream_xof remains unchanged for creating
+per-component keystreams.
+
 ## Component Encryption
 
 For each component, the encryption process follows a precise sequence
@@ -423,6 +430,11 @@ that ensures both confidentiality and authenticity:
 
 The padding length is calculated as:
 `padding_len = (3 - (16 + component_len) % 3) % 3`
+
+Important: The `components_xof` maintains state across all components. After
+generating the SIV for component N, the XOF can be updated with component N+1's
+plaintext. This chaining ensures that each component's encryption depends on
+all previous components, enabling the prefix-preserving property.
 
 ## Component Decryption
 
