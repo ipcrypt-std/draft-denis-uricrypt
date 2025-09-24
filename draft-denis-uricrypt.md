@@ -253,7 +253,7 @@ This section provides the complete algorithms for encryption and
 decryption. The following functions and operations are used throughout
 the algorithms:
 
-* `TurboSHAKE128()`: Creates a new TurboSHAKE128 instance with domain separation parameter 0x1F. This function produces an extensible output function (XOF) that can generate arbitrary-length outputs.
+* `TurboSHAKE128()`: Creates a new TurboSHAKE128 XOF instance with domain separation parameter 0x1F. This function produces an extensible output function (XOF) that can generate arbitrary-length outputs.
 
 * `.update(data)`: Absorbs the provided data into the hash state. The data is processed sequentially and updates the internal state of the hash function.
 
