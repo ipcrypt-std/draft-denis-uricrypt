@@ -88,8 +88,9 @@ Table of Contents
      7.7.  Security Bounds
      7.8.  Limitations and Trade-offs
    8.  Security Considerations
-   9.  IANA Considerations
-   10. Normative References
+   IANA Considerations
+   Acknowledgments
+   Normative References
    Appendix A.  Pseudocode
      A.1.  URI Component Extraction
      A.2.  XOF Initialization
@@ -746,11 +747,17 @@ Table of Contents
       using the same (key, context) pair for different applications is
       NOT RECOMMENDED.
 
-9.  IANA Considerations
+IANA Considerations
 
    This document has no actions for IANA.
 
-10.  Normative References
+Acknowledgments
+
+   The author would like to thank Maciej Soltysiak for highlighting the
+   importance of properly supporting query parameters and fragments in
+   URI encryption.
+
+Normative References
 
    [I-D.draft-denis-ipcrypt]
               Denis, F., "Methods for IP Address Encryption and
