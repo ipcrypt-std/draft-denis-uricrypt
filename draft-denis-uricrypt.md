@@ -414,6 +414,7 @@ Each URI component is authenticated through the SIV mechanism:
 ## Prefix-Preserving Property
 
 URICrypt maintains a controlled information leakage pattern:
+
 - URIs sharing a common prefix will produce ciphertexts with the same encrypted prefix
 - This property is deterministic and intentional, enabling systems to perform prefix-based operations
 - The leakage is limited to prefix structure only - no information about non-matching suffixes is revealed
@@ -421,6 +422,7 @@ URICrypt maintains a controlled information leakage pattern:
 ## Domain Separation
 
 The context parameter provides cryptographic domain separation:
+
 - Different contexts with the same key produce completely independent ciphertexts
 - This prevents cross-context attacks where ciphertexts from one application could be used in another
 - Context binding is cryptographically enforced through the hasher initialization
