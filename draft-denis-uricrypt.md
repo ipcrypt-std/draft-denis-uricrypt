@@ -52,7 +52,7 @@ cryptographically on all preceding components. This ensures that URIs
 sharing common prefixes produce ciphertexts that also share common
 encrypted prefixes.
 
-The scheme uses TurboSHAKE128 {{FIPS202}} as its cryptographic primitive
+The scheme uses TurboSHAKE128 {{!I-D.draft-irtf-cfrg-kangarootwelve}} as its cryptographic primitive
 and provides authenticated encryption for each component, preventing
 tampering, reordering, or mixing of encrypted segments.
 
