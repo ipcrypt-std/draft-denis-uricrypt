@@ -313,7 +313,7 @@ for:
 * Generating keystream for encryption/decryption
 * All hash operations in the initialization
 
-TurboSHAKE128 is specified in {{FIPS202}} and provides the security
+TurboSHAKE128 is specified in {{!I-D.draft-irtf-cfrg-kangarootwelve}}} and provides the security
 properties needed for this construction.
 
 ## Key and Context Handling
