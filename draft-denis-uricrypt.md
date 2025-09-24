@@ -216,13 +216,13 @@ base_keystream_hasher.update("KS")
 
 For each component, the encryption process is:
 
-1.  Update components_hasher with the component plaintext
-2.  Generate SIV from components_hasher (16 bytes)
-3.  Create keystream_hasher by cloning `base_keystream_hashe`r and updating with SIV
+1.  Update `components_hasher` with the component plaintext
+2.  Generate SIV from `components_hasher` (16 bytes)
+3.  Create `keystream_hasher` by cloning `base_keystream_hashe`r and updating with SIV
 4.  Calculate padding needed for base64 encoding
 5.  Generate keystream of length `(component_length + padding)`
 6.  XOR padded component with keystream
-7.  Output SIV concatenated with encrypted_component
+7.  Output SIV concatenated with `encrypted_component`
 
 The padding length is calculated as:
 `padding_len = (3 - (16 + component_len) % 3) % 3`
@@ -232,21 +232,20 @@ The padding length is calculated as:
 For each encrypted component, the decryption process is:
 
 1.  Read SIV from input (16 bytes)
-2.  Create keystream_hasher by cloning base_keystream_hasher and updating with SIV
+2.  Create `keystream_hasher` by cloning `base_keystream_hasher` and updating with SIV
 3.  Read encrypted component data (length determined from encoding)
 4.  Generate keystream and decrypt component
 5.  Remove padding to recover plaintext
-6.  Update components_hasher with plaintext
-7.  Generate expected SIV from components_hasher
+6.  Update `components_hasher` with plaintext
+7.  Generate expected SIV from `components_hasher`
 8.  Compare expected SIV with received SIV (constant-time)
-9.  If mismatch, return error
+9.  If mismatch, return `error`
 
-Authentication is critical: any modification to the encrypted data
-will cause the SIV comparison to fail.
+Any teampering with the encrypted data will cause the SIV comparison to fail.
 
 ## Padding and Encoding
 
-Each encrypted component (SIV || ciphertext) is padded to make its
+Each encrypted component `(SIV || ciphertext)` is padded to make its
 length a multiple of 3 bytes, enabling clean base64 encoding without
 padding characters.
 
@@ -317,7 +316,7 @@ Steps:
 ## TurboSHAKE128 Usage
 
 Implementations MUST use TurboSHAKE128 with a domain separation
-parameter of 0x06 for all operations. The TurboSHAKE128 XOF is used
+parameter of `0x1F` for all operations. The TurboSHAKE128 XOF is used
 for:
 
 * Generating SIVs from the components hasher
@@ -448,7 +447,7 @@ function initialize_hashers(secret_key, context):
         return error("Weak key pattern detected")
 
   // Initialize base hasher
-  base_hasher = TurboSHAKE128(0x06)
+  base_hasher = TurboSHAKE128(0x1F)
 
   // Absorb key and context with length prefixes
   base_hasher.update(uint8(len(secret_key)))
