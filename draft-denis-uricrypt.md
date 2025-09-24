@@ -733,6 +733,7 @@ URICrypt makes specific security trade-offs for functionality, including the fol
 - Deterministic encryption: Same inputs produce same outputs, enabling certain traffic analysis
 - Length preservation: Component lengths are not hidden, potentially revealing information patterns
 - Prefix structure leakage: The hierarchical structure of URIs is preserved by design
+- SIV length configuration: Implementations MAY adjust SIVLEN for different usage bounds. Larger values (24 or 32 bytes) increase birthday bound resistance at the cost of ciphertext expansion. However, 16 bytes is generally recommended as it provides 2<sup>64</sup> collision resistance with acceptable overhead
 
 These trade-offs are intentional and necessary for the prefix-preserving functionality. Applications requiring stronger privacy guarantees should evaluate whether URICrypt's properties align with their threat model.
 
