@@ -1893,12 +1893,20 @@ all previous components, enabling the prefix-preserving property.<a href="#secti
 encrypted component pair <code>(SIV || ciphertext)</code> is padded to a multiple of 3 bytes.
 This is necessary because base64 encoding processes 3 bytes at a time to produce
 4 characters of output.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
-<p id="section-4.4-2">The padding calculation <code>(3 - (16 + component_len) % 3) % 3</code> ensures:
-- If <code>(16 + component_len) % 3 = 0</code>: no padding needed (already aligned)
-- If <code>(16 + component_len) % 3 = 1</code>: add 2 bytes of padding
-- If <code>(16 + component_len) % 3 = 2</code>: add 1 byte of padding<a href="#section-4.4-2" class="pilcrow">¶</a></p>
-<p id="section-4.4-3">The final output is encoded using URL-safe base64 <span>[<a href="#RFC4648" class="cite xref">RFC4648</a>]</span>, with ‘-‘ replacing
-‘+’ and ‘_’ replacing ‘/’ for URI compatibility.<a href="#section-4.4-3" class="pilcrow">¶</a></p>
+<p id="section-4.4-2">The padding calculation <code>(3 - (16 + component_len) % 3) % 3</code> ensures:<a href="#section-4.4-2" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-4.4-3.1">
+            <p id="section-4.4-3.1.1">If <code>(16 + component_len) % 3 = 0</code>: no padding needed (already aligned)<a href="#section-4.4-3.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-4.4-3.2">
+            <p id="section-4.4-3.2.1">If <code>(16 + component_len) % 3 = 1</code>: add 2 bytes of padding<a href="#section-4.4-3.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-4.4-3.3">
+            <p id="section-4.4-3.3.1">If <code>(16 + component_len) % 3 = 2</code>: add 1 byte of padding<a href="#section-4.4-3.3.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-4.4-4">The final output is encoded using URL-safe base64 <span>[<a href="#RFC4648" class="cite xref">RFC4648</a>]</span>, with ‘-‘ replacing
+‘+’ and ‘_’ replacing ‘/’ for URI compatibility.<a href="#section-4.4-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
