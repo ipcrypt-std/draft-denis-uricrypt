@@ -429,14 +429,11 @@ The context parameter provides cryptographic domain separation:
 - This prevents cross-context attacks where ciphertexts from one application could be used in another
 - Context binding is cryptographically enforced through the XOF initialization
 
-## Key-Committing Property
+## Key Commitment
 
 URICrypt provides full key-commitment security:
 
-- The scheme is fully key-committing, meaning that a ciphertext can only be correctly decrypted with the exact key that was used to encrypt it
-- It is computationally infeasible to find two different keys that can successfully decrypt the same ciphertext to valid plaintexts
-- This property is achieved through the SIV authentication mechanism, which binds the ciphertext to the specific key used during encryption
-- Key commitment prevents attacks where an adversary could create ambiguous ciphertexts that decrypt differently under different keys
+The scheme is fully key-committing, meaning that a ciphertext can only be decrypted with the exact key that was used to encrypt it. It is computationally infeasible to find two different keys that can successfully decrypt the same ciphertext to valid plaintexts
 
 ## Resistance to Common Attacks
 
