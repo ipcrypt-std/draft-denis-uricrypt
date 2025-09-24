@@ -424,8 +424,8 @@ base_keystream_xof.update("KS")
 Note on XOF cloning: The `.clone()` operation creates a new XOF instance with
 an identical internal state, preserving all previously absorbed data. After
 cloning, the original and cloned XOFs can be updated and read from
-independently. This allows the components_xof to maintain a running state
-across all components while base_keystream_xof remains unchanged for creating
+independently. This allows the `components_xof` to maintain a running state
+across all components while `base_keystream_xof` remains unchanged for creating
 per-component keystreams.
 
 ## Component Encryption
