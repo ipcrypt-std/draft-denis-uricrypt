@@ -67,7 +67,7 @@ Table of Contents
        3.1.2.  Path-Only URIs
      3.2.  Component Reconstruction
    4.  Cryptographic Operations
-     4.1.  Hasher Initialization
+     4.1.  XOF Initialization
      4.2.  Component Encryption
      4.3.  Component Decryption
      4.4.  Padding and Encoding
@@ -83,15 +83,16 @@ Table of Contents
      7.2.  Authenticity and Integrity
      7.3.  Prefix-Preserving Property
      7.4.  Domain Separation
-     7.5.  Resistance to Common Attacks
-     7.6.  Security Bounds
-     7.7.  Limitations and Trade-offs
+     7.5.  Key-Committing Property
+     7.6.  Resistance to Common Attacks
+     7.7.  Security Bounds
+     7.8.  Limitations and Trade-offs
    8.  Security Considerations
    9.  IANA Considerations
    10. Normative References
    Appendix A.  Pseudocode
      A.1.  URI Component Extraction
-     A.2.  Hasher Initialization
+     A.2.  XOF Initialization
      A.3.  Encryption Algorithm
      A.4.  Decryption Algorithm
      A.5.  Padding and Encoding
@@ -174,8 +175,8 @@ Table of Contents
    *  Scheme: The URI scheme (e.g., “https://”) which is preserved in
       plaintext.
 
-   *  XOF: Extendable-Output Function, a hash function that can produce
-      output of arbitrary length.
+   *  XOF: Extendable-Output Function, a cryptographic function that can
+      produce output of arbitrary length.
 
    *  SIV: Synthetic Initialization Vector, a 16-byte value derived from
       the accumulated state of all previous components, used for
@@ -250,45 +251,45 @@ Table of Contents
 
    URICrypt uses three parallel TurboSHAKE128
    [I-D.draft-irtf-cfrg-kangarootwelve] instances for different
-   purposes, all initialized from the same base hasher.
+   purposes, all initialized from the same base XOF instance.
 
-4.1.  Hasher Initialization
+4.1.  XOF Initialization
 
-   The base hasher is initialized with the secret key and context
-   parameter using length-prefixed encoding to prevent ambiguities.
+   The base XOF is initialized with the secret key and context parameter
+   using length-prefixed encoding to prevent ambiguities.
 
-   Two hashers are derived from the base hasher:
+   Two XOF instances are derived from the base XOF:
 
-   1.  Components Hasher: Updated with each component’s plaintext to
+   1.  Components XOF: Updated with each component’s plaintext to
        generate SIVs
 
-   2.  Base Keystream Hasher: Used as the starting point for generating
+   2.  Base Keystream XOF: Used as the starting point for generating
        keystream for each component
 
    The initialization process:
 
-   base_hasher = TurboSHAKE128()
-   base_hasher.update(len(secret_key))
-   base_hasher.update(secret_key)
-   base_hasher.update(len(context))
-   base_hasher.update(context)
+   base_xof = TurboSHAKE128()
+   base_xof.update(len(secret_key))
+   base_xof.update(secret_key)
+   base_xof.update(len(context))
+   base_xof.update(context)
 
-   components_hasher = base_hasher.clone()
-   components_hasher.update("IV")
+   components_xof = base_xof.clone()
+   components_xof.update("IV")
 
-   base_keystream_hasher = base_hasher.clone()
-   base_keystream_hasher.update("KS")
+   base_keystream_xof = base_xof.clone()
+   base_keystream_xof.update("KS")
 
 4.2.  Component Encryption
 
    For each component, the encryption process is:
 
-   1.  Update components_hasher with the component plaintext
+   1.  Update components_xof with the component plaintext
 
-   2.  Generate SIV from components_hasher (16 bytes)
+   2.  Generate SIV from components_xof (16 bytes)
 
-   3.  Create keystream_hasher by cloning base_keystream_hasher and
-       updating with SIV
+   3.  Create keystream_xof by cloning base_keystream_xof and updating
+       with SIV
 
    4.  Calculate padding needed for base64 encoding
 
@@ -307,8 +308,8 @@ Table of Contents
 
    1.  Read SIV from input (16 bytes)
 
-   2.  Create keystream_hasher by cloning base_keystream_hasher and
-       updating with SIV
+   2.  Create keystream_xof by cloning base_keystream_xof and updating
+       with SIV
 
    3.  Read encrypted component data (length determined from encoding)
 
@@ -316,9 +317,9 @@ Table of Contents
 
    5.  Remove padding to recover plaintext
 
-   6.  Update components_hasher with plaintext
+   6.  Update components_xof with plaintext
 
-   7.  Generate expected SIV from components_hasher
+   7.  Generate expected SIV from components_xof
 
    8.  Compare expected SIV with received SIV (constant-time)
 
@@ -346,16 +347,15 @@ Table of Contents
       extensible output function (XOF) that can generate arbitrary-
       length outputs.
 
-   *  .update(data): Absorbs the provided data into the hash state.  The
+   *  .update(data): Absorbs the provided data into the XOF state.  The
       data is processed sequentially and updates the internal state of
-      the hash function.
+      the XOF.
 
    *  .read(length): Squeezes the specified number of bytes from the
-      hash function’s output.  Each call continues from where the
-      previous read left off, producing a continuous stream of
-      pseudorandom bytes.
+      XOF’s output.  Each call continues from where the previous read
+      left off, producing a continuous stream of pseudorandom bytes.
 
-   *  .clone(): Creates a new hash instance with an identical internal
+   *  .clone(): Creates a new XOF instance with an identical internal
       state to the original.  This enables multiple independent
       computation paths from the same initial state.
 
@@ -404,24 +404,23 @@ Table of Contents
 
    1.  Split URI into scheme and components
 
-   2.  Initialize hashers as described in Section 4.1
+   2.  Initialize XOF instances as described in Section 4.1
 
    3.  encrypted_output = empty byte array
 
    4.  For each component:
 
-       *  Update components_hasher with component
+       *  Update components_xof with component
 
-       *  SIV = components_hasher.read(16)
+       *  SIV = components_xof.read(16)
 
-       *  keystream_hasher = base_keystream_hasher.clone()
+       *  keystream_xof = base_keystream_xof.clone()
 
-       *  keystream_hasher.update(SIV)
+       *  keystream_xof.update(SIV)
 
        *  padding_len = (3 - (16 + len(component)) % 3) % 3
 
-       *  keystream = keystream_hasher.read(len(component) +
-          padding_len)
+       *  keystream = keystream_xof.read(len(component) + padding_len)
 
        *  padded_component = component concatenated with
           zeros(padding_len)
@@ -448,7 +447,7 @@ Table of Contents
    2.  decoded = base64url_decode(base64_part).  If decoding fails,
        return error
 
-   3.  Initialize hashers as described in Section 4.1
+   3.  Initialize XOF instances as described in Section 4.1
 
    4.  decrypted_components = empty list
 
@@ -459,23 +458,23 @@ Table of Contents
        *  SIV = input_stream.read(16).  If not enough bytes, return
           error
 
-       *  keystream_hasher = base_keystream_hasher.clone()
+       *  keystream_xof = base_keystream_xof.clone()
 
-       *  keystream_hasher.update(SIV)
+       *  keystream_xof.update(SIV)
 
        *  Determine component length from remaining data and padding
 
        *  encrypted_part = input_stream.read(component_length)
 
-       *  keystream = keystream_hasher.read(len(encrypted_part))
+       *  keystream = keystream_xof.read(len(encrypted_part))
 
        *  padded_plaintext = encrypted_part XOR keystream
 
        *  component = remove_padding(padded_plaintext)
 
-       *  Update components_hasher with component
+       *  Update components_xof with component
 
-       *  expected_SIV = components_hasher.read(16)
+       *  expected_SIV = components_xof.read(16)
 
        *  If constant_time_compare(SIV, expected_SIV) == false: return
           error
@@ -494,11 +493,11 @@ Table of Contents
    parameter of 0x1F for all operations.  The TurboSHAKE128 XOF is used
    for:
 
-   *  Generating SIVs from the components hasher
+   *  Generating SIVs from the components XOF
 
    *  Generating keystream for encryption/decryption
 
-   *  All hash operations in the initialization
+   *  All XOF operations in the initialization
 
    TurboSHAKE128 is specified in [I-D.draft-irtf-cfrg-kangarootwelve]
    and provides the security properties needed for this construction.
@@ -515,12 +514,12 @@ Table of Contents
    prevent cross-application attacks.  The context string MAY be empty.
 
    Both key and context are length-prefixed when absorbed into the base
-   hasher:
+   XOF:
 
-   base_hasher.update(len(secret_key) as uint8)
-   base_hasher.update(secret_key)
-   base_hasher.update(len(context) as uint8)
-   base_hasher.update(context)
+   base_xof.update(len(secret_key) as uint8)
+   base_xof.update(secret_key)
+   base_xof.update(len(context) as uint8)
+   base_xof.update(context)
 
    The length is encoded as a single byte, limiting keys and contexts to
    255 bytes.  This is sufficient for all practical use cases.
@@ -601,10 +600,29 @@ Table of Contents
    *  This prevents cross-context attacks where ciphertexts from one
       application could be used in another
 
-   *  Context binding is cryptographically enforced through the hasher
+   *  Context binding is cryptographically enforced through the XOF
       initialization
 
-7.5.  Resistance to Common Attacks
+7.5.  Key-Committing Property
+
+   URICrypt provides full key-commitment security:
+
+   *  The scheme is fully key-committing, meaning that a ciphertext can
+      only be correctly decrypted with the exact key that was used to
+      encrypt it
+
+   *  It is computationally infeasible to find two different keys that
+      can successfully decrypt the same ciphertext to valid plaintexts
+
+   *  This property is achieved through the SIV authentication
+      mechanism, which binds the ciphertext to the specific key used
+      during encryption
+
+   *  Key commitment prevents attacks where an adversary could create
+      ambiguous ciphertexts that decrypt differently under different
+      keys
+
+7.6.  Resistance to Common Attacks
 
    URICrypt resists several categories of attacks:
 
@@ -626,7 +644,7 @@ Table of Contents
    Key Recovery: TurboSHAKE128’s security properties ensure that
    observing ciphertexts does not leak information about the secret key.
 
-7.6.  Security Bounds
+7.7.  Security Bounds
 
    The security of URICrypt is bounded by:
 
@@ -639,7 +657,7 @@ Table of Contents
    *  Computational security: Based on TurboSHAKE128’s proven security
       as an XOF
 
-7.7.  Limitations and Trade-offs
+7.8.  Limitations and Trade-offs
 
    URICrypt makes specific security trade-offs for functionality:
 
@@ -768,75 +786,75 @@ A.1.  URI Component Extraction
 
      return (scheme, components)
 
-A.2.  Hasher Initialization
+A.2.  XOF Initialization
 
-   function initialize_hashers(secret_key, context):
-     // Initialize base hasher
-     base_hasher = TurboSHAKE128(0x1F)
+   function initialize_xofs(secret_key, context):
+     // Initialize base XOF
+     base_xof = TurboSHAKE128(0x1F)
 
      // Absorb key and context with length prefixes
-     base_hasher.update(uint8(len(secret_key)))
-     base_hasher.update(secret_key)
-     base_hasher.update(uint8(len(context)))
-     base_hasher.update(context)
+     base_xof.update(uint8(len(secret_key)))
+     base_xof.update(secret_key)
+     base_xof.update(uint8(len(context)))
+     base_xof.update(context)
 
-     // Create components hasher
-     components_hasher = base_hasher.clone()
-     components_hasher.update("IV")
+     // Create components XOF
+     components_xof = base_xof.clone()
+     components_xof.update("IV")
 
-     // Create base keystream hasher
-     base_keystream_hasher = base_hasher.clone()
-     base_keystream_hasher.update("KS")
+     // Create base keystream XOF
+     base_keystream_xof = base_xof.clone()
+     base_keystream_xof.update("KS")
 
-     return (components_hasher, base_keystream_hasher)
+     return (components_xof, base_keystream_xof)
 
 A.3.  Encryption Algorithm
 
-  function uricrypt_encrypt(secret_key, context, uri_string):
-    // Extract components
-    (scheme, components) = extract_components(uri_string)
+   function uricrypt_encrypt(secret_key, context, uri_string):
+     // Extract components
+     (scheme, components) = extract_components(uri_string)
 
-    // Initialize hashers with secret key and context
-    (components_hasher, base_keystream_hasher) =
-        initialize_hashers(secret_key, context)
-    if error: return error
+     // Initialize XOF instances with secret key and context
+     (components_xof, base_keystream_xof) =
+         initialize_xofs(secret_key, context)
+     if error: return error
 
-    encrypted_output = byte_array()
+     encrypted_output = byte_array()
 
-    // Process each component
-    for component in components:
-       // Update components hasher for SIV computation
-       components_hasher.update(component)
+     // Process each component
+     for component in components:
+        // Update components XOF for SIV computation
+        components_xof.update(component)
 
-       // Generate 16-byte Synthetic Initialization Vector (SIV)
-       siv = components_hasher.squeeze(16)
+        // Generate 16-byte Synthetic Initialization Vector (SIV)
+        siv = components_xof.squeeze(16)
 
-       // Create keystream hasher for this component
-       keystream_hasher = base_keystream_hasher.clone()
-       keystream_hasher.update(siv)
+        // Create keystream XOF for this component
+        keystream_xof = base_keystream_xof.clone()
+        keystream_xof.update(siv)
 
-       // Calculate padding for base64 encoding alignment
-       component_len = len(component)
-       padding_len = (3 - (16 + component_len) % 3) % 3
+        // Calculate padding for base64 encoding alignment
+        component_len = len(component)
+        padding_len = (3 - (16 + component_len) % 3) % 3
 
-       // Generate keystream
-       keystream = keystream_hasher.squeeze(component_len + padding_len)
+        // Generate keystream
+        keystream = keystream_xof.squeeze(component_len + padding_len)
 
-       // Pad component to align with base64 encoding requirements
-       padded_component = component + byte_array(padding_len)
+        // Pad component to align with base64 encoding requirements
+        padded_component = component + byte_array(padding_len)
 
-       // Encrypt using XOR with keystream
-       encrypted_part = xor_bytes(padded_component, keystream)
+        // Encrypt using XOR with keystream
+        encrypted_part = xor_bytes(padded_component, keystream)
 
-       // Append to output
-       encrypted_output.extend(siv)
-       encrypted_output.extend(encrypted_part)
+        // Append to output
+        encrypted_output.extend(siv)
+        encrypted_output.extend(encrypted_part)
 
-    // Base64 encode with URL-safe characters and no padding
-    base64_output = base64_urlsafe_no_pad_encode(encrypted_output)
+     // Base64 encode with URL-safe characters and no padding
+     base64_output = base64_urlsafe_no_pad_encode(encrypted_output)
 
-    // Return with scheme
-    return scheme + base64_output
+     // Return with scheme
+     return scheme + base64_output
 
 A.4.  Decryption Algorithm
 
@@ -855,9 +873,9 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
   catch:
      return error("Decryption failed")
 
-  // Initialize hashers with secret key and context
-  (components_hasher, base_keystream_hasher) =
-      initialize_hashers(secret_key, context)
+  // Initialize XOF instances with secret key and context
+  (components_xof, base_keystream_xof) =
+      initialize_xofs(secret_key, context)
   if error: return error
 
   decrypted_components = []
@@ -870,9 +888,9 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      if len(siv) != 16:
         return error("Decryption failed")
 
-     // Create keystream hasher
-     keystream_hasher = base_keystream_hasher.clone()
-     keystream_hasher.update(siv)
+     // Create keystream XOF
+     keystream_xof = base_keystream_xof.clone()
+     keystream_xof.update(siv)
 
      // Determine component length by checking padding constraints
      remaining = input_stream.remaining()
@@ -895,18 +913,18 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      encrypted_part = input_stream.read(len(component_data))
 
      // Generate keystream and decrypt
-     keystream = keystream_hasher.squeeze(len(encrypted_part))
+     keystream = keystream_xof.squeeze(len(encrypted_part))
      padded_plaintext = xor_bytes(encrypted_part, keystream)
 
      // Remove padding bytes added for base64 alignment
      padding_len = (3 - (16 + len(encrypted_part)) % 3) % 3
      component = padded_plaintext[:-padding_len] if padding_len > 0 else padded_plaintext
 
-     // Update hasher with plaintext
-     components_hasher.update(component)
+     // Update XOF with plaintext
+     components_xof.update(component)
 
      // Generate expected SIV
-     expected_siv = components_hasher.squeeze(16)
+     expected_siv = components_xof.squeeze(16)
 
      // Authenticate using constant-time comparison to prevent timing attacks
      if not constant_time_equal(siv, expected_siv):
