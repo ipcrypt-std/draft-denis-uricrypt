@@ -202,6 +202,49 @@ Table of Contents
    This section describes how URIs are processed for encryption and
    decryption.
 
+   The overall encryption flow transforms a plaintext URI into an
+   encrypted URI while preserving the hierarchical structure:
+
+   +-------------------------------------------------------------+
+   |                     Input URI                               |
+   |         "https://example.com/path/to/resource"              |
+   +-------------------------------------------------------------+
+                            |
+                            v
+   +-------------------------------------------------------------+
+   |                  URI Decomposition                          |
+   +-------------------------------------------------------------+
+   |  Scheme: "https://"                                         |
+   |  Components: ["example.com/", "path/", "to/", "resource"]   |
+   +-------------------------------------------------------------+
+                            |
+                            v
+   +-------------------------------------------------------------+
+   |               Chained Encryption Process                    |
+   +-------------------------------------------------------------+
+   |  For each component in sequence:                            |
+   |    1. Update state with plaintext                           |
+   |    2. Generate SIV from accumulated state                   |
+   |    3. Derive keystream using SIV                            |
+   |    4. Encrypt component with keystream                      |
+   |    5. Output: SIV || encrypted_component                    |
+   +-------------------------------------------------------------+
+                            |
+                            v
+   +-------------------------------------------------------------+
+   |                 Encoding & Assembly                         |
+   +-------------------------------------------------------------+
+   |  1. Concatenate all (SIV || encrypted_component) pairs      |
+   |  2. Apply base64url encoding                                |
+   |  3. Prepend original scheme                                 |
+   +-------------------------------------------------------------+
+                            |
+                            v
+   +-------------------------------------------------------------+
+   |                    Encrypted URI                            |
+   |         "https://HOGo9vauZ3b3xsPNPQng5apS..."               |
+   +-------------------------------------------------------------+
+
 3.1.  URI Component Extraction
 
    Before encryption, a URI must be split into its scheme and path
@@ -294,6 +337,90 @@ Table of Contents
    [I-D.draft-irtf-cfrg-kangarootwelve] instances for different
    purposes, all initialized from the same base XOF instance.
 
+   The chained encryption model creates cryptographic dependencies
+   between components, ensuring prefix preservation:
+
+     URI: "https://example.com/path/to/resource"
+
+     +-----------------+
+     | Component 1:    |
+     | "example.com/"  |
+     +-----------------+
+              |
+              | Plaintext absorbed into components_xof
+              v
+     +-----------------+
+     | SIV1 generation |------> SIV1 (16 bytes)
+     +-----------------+         |
+                                 |
+                                 v
+                       Encrypt("example.com/")
+                                 |
+                                 v
+                       Output1 = SIV1 || Ciphertext1
+              |
+              | State carries forward
+              v
+     +-----------------+
+     | Component 2:    |
+     | "path/"         |
+     +-----------------+
+              |
+              | Plaintext absorbed (includes Component 1 state)
+              v
+     +-----------------+
+     | SIV2 generation |------> SIV2 (depends on 1)
+     +-----------------+         |
+                                 |
+                                 v
+                       Encrypt("path/")
+                                 |
+                                 v
+                       Output2 = SIV2 || Ciphertext2
+              |
+              | State carries forward
+              v
+     +-----------------+
+     | Component 3:    |
+     | "to/"           |
+     +-----------------+
+              |
+              | Plaintext absorbed (includes 1 + 2 state)
+              v
+     +-----------------+
+     | SIV3 generation |------> SIV3 (depends on 1, 2)
+     +-----------------+         |
+                                 |
+                                 v
+                       Encrypt("to/")
+                                 |
+                                 v
+                       Output3 = SIV3 || Ciphertext3
+              |
+              | State carries forward
+              v
+     +-----------------+
+     | Component 4:    |
+     | "resource"      |
+     +-----------------+
+              |
+              | Plaintext absorbed (includes 1 + 2 + 3 state)
+              v
+     +-----------------+
+     | SIV4 generation |------> SIV4 (depends on 1, 2, 3)
+     +-----------------+         |
+                                 |
+                                 v
+                       Encrypt("resource")
+                                 |
+                                 v
+                       Output4 = SIV4 || Ciphertext4
+
+     Final Output: Output1 || Output2 || Output3 || Output4
+
+   If URIs share a common prefix example.com/path/, their Output1 and
+   Output2 will be identical
+
 4.1.  XOF Initialization
 
    The base XOF is initialized with the secret key and context parameter
@@ -307,7 +434,36 @@ Table of Contents
    2.  Base Keystream XOF: Used as the starting point for generating
        keystream for each component
 
-   The initialization process:
+     Input: len(key) || key || len(context) || context
+
+     +----------------------------------------------------+
+     | base_xof = TurboSHAKE128(domain_sep=0x1F)          |
+     | base_xof.update(len(secret_key))                   |
+     | base_xof.update(secret_key)                        |
+     | base_xof.update(len(context))                      |
+     | base_xof.update(context)                           |
+     +----------------------------------------------------+
+                              |
+                              v
+                 +------------------------+
+                 |    Clone Base State    |
+                 +------------------------+
+                              |
+             +----------------+----------------+
+             v                                 v
+     +------------------+            +------------------+
+     |  Components XOF  |            |Base Keystream XOF|
+     +------------------+            +------------------+
+     |   update("IV")   |            |   update("KS")   |
+     +------------------+            +------------------+
+             |                                 |
+             |                                 |
+             v                                 v
+     For SIV Generation               For Keystream Base
+     (Updated with each               (Cloned for each
+      component plaintext)             component's keystream)
+
+   The initialization process is:
 
    base_xof = TurboSHAKE128()
    base_xof.update(len(secret_key))
@@ -323,7 +479,8 @@ Table of Contents
 
 4.2.  Component Encryption
 
-   For each component, the encryption process is:
+   For each component, the encryption process follows a precise sequence
+   that ensures both confidentiality and authenticity:
 
    1.  Update components_xof with the component plaintext
 
