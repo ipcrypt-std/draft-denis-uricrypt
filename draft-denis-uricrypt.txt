@@ -429,8 +429,8 @@ Table of Contents
 
    *  All hash operations in the initialization
 
-   TurboSHAKE128 is specified in [FIPS202] and provides the security
-   properties needed for this construction.
+   TurboSHAKE128 is specified in [I-D.draft-irtf-cfrg-kangarootwelve]}
+   and provides the security properties needed for this construction.
 
 6.2.  Key and Context Handling
 
@@ -760,12 +760,6 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
    "https://AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"
 
 11.  Normative References
-
-   [FIPS202]  National Institute of Standards and Technology, "SHA-3
-              Standard: Permutation-Based Hash and Extendable-Output
-              Functions", FIPS PUB 202, August 2015,
-              <https://nvlpubs.nist.gov/nistpubs/FIPS/
-              NIST.FIPS.202.pdf>.
 
    [I-D.draft-irtf-cfrg-kangarootwelve]
               Viguier, B., Wong, D., Van Assche, G., Dang, Q., and J.
