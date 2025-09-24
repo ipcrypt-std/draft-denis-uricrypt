@@ -374,13 +374,13 @@ Two XOF instances are derived from the base XOF:
 ~~~
   Input: len(key) || key || len(context) || context
 
-  +------------------------------------------------------+
+  +-----------------------------------------------------+
   | base_xof = TurboSHAKE128(domain_sep=0x1F)           |
   | base_xof.update(len(secret_key))                    |
   | base_xof.update(secret_key)                         |
   | base_xof.update(len(context))                       |
   | base_xof.update(context)                            |
-  +------------------------------------------------------+
+  +-----------------------------------------------------+
                             |
                             v
                +------------------------+
