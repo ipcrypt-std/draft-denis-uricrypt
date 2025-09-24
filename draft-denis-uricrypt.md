@@ -16,16 +16,6 @@ stand_alone: yes
 smart_quotes: yes
 pi: [toc, sortrefs, symrefs]
 
-normative:
-  FIPS202:
-    title: "SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions"
-    author:
-      org: National Institute of Standards and Technology
-    date: 2015-08
-    seriesinfo:
-      FIPS: PUB 202
-    target: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf
-
 --- abstract
 
 This document specifies URICrypt, a deterministic, prefix-preserving
