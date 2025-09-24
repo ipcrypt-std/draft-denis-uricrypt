@@ -1602,9 +1602,8 @@ When combined with the scheme: "https://example.com/a/b/c"
       <h2 id="name-cryptographic-operations">
 <a href="#section-4" class="section-number selfRef">4. </a><a href="#name-cryptographic-operations" class="section-name selfRef">Cryptographic Operations</a>
       </h2>
-<p id="section-4-1">URICrypt uses multiple XOF instances initialized from the same base XOF instance.<a href="#section-4-1" class="pilcrow">¶</a></p>
-<p id="section-4-2">The chained encryption model creates cryptographic dependencies between components and ensures prefix preservation.<a href="#section-4-2" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-4-3">
+<p id="section-4-1">The chained encryption model creates cryptographic dependencies between components and ensures prefix preservation.<a href="#section-4-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4-2">
 <pre>
   URI: "https://example.com/path/to/resource"
 
@@ -1683,9 +1682,9 @@ When combined with the scheme: "https://example.com/a/b/c"
                       Output4 = SIV4 || Ciphertext4
 
   Final Output: Output1 || Output2 || Output3 || Output4
-</pre><a href="#section-4-3" class="pilcrow">¶</a>
+</pre><a href="#section-4-2" class="pilcrow">¶</a>
 </div>
-<p id="section-4-4">If URIs share a common prefix <code>example.com/path/</code>, their <code>Output1</code> and <code>Output2</code> will be identical.<a href="#section-4-4" class="pilcrow">¶</a></p>
+<p id="section-4-3">If URIs share a common prefix <code>example.com/path/</code>, their <code>Output1</code> and <code>Output2</code> will be identical.<a href="#section-4-3" class="pilcrow">¶</a></p>
 <div id="xof-init">
 <section id="section-4.1">
         <h3 id="name-xof-initialization">
