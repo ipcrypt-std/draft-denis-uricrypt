@@ -1789,12 +1789,22 @@ that ensures both confidentiality and authenticity:<a href="#section-4.2-1" clas
             <p id="section-4.2-2.7.1">Output SIV concatenated with <code>encrypted_component</code><a href="#section-4.2-2.7.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
-<p id="section-4.2-3">The padding length is calculated as:
-<code>padding_len = (3 - (16 + component_len) % 3) % 3</code><a href="#section-4.2-3" class="pilcrow">¶</a></p>
-<p id="section-4.2-4">Important: The <code>components_xof</code> maintains state across all components. After
+<p id="section-4.2-3">The padding ensures clean base64url encoding without padding characters. Since
+base64 encoding works with groups of 3 bytes (producing 4 characters), we pad each
+<code>(SIV || encrypted_component)</code> pair to have a length that’s a multiple of 3:<a href="#section-4.2-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.2-4">
+<pre>
+total_bytes = 16 (SIV) + component_len
+padding_len = (3 - total_bytes % 3) % 3
+</pre><a href="#section-4.2-4" class="pilcrow">¶</a>
+</div>
+<p id="section-4.2-5">This formula calculates:
+- How many bytes are needed to reach the next multiple of 3
+- The outer modulo handles the case where <code>total_bytes</code> is already a multiple of 3<a href="#section-4.2-5" class="pilcrow">¶</a></p>
+<p id="section-4.2-6">Important: The <code>components_xof</code> maintains state across all components. After
 generating the SIV for component N, the XOF can be updated with component N+1’s
 plaintext. This chaining ensures that each component’s encryption depends on
-all previous components, enabling the prefix-preserving property.<a href="#section-4.2-4" class="pilcrow">¶</a></p>
+all previous components, enabling the prefix-preserving property.<a href="#section-4.2-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="component-decryption">
@@ -1840,10 +1850,16 @@ all previous components, enabling the prefix-preserving property.<a href="#secti
         <h3 id="name-padding-and-encoding">
 <a href="#section-4.4" class="section-number selfRef">4.4. </a><a href="#name-padding-and-encoding" class="section-name selfRef">Padding and Encoding</a>
         </h3>
-<p id="section-4.4-1">Each encrypted component <code>(SIV || ciphertext)</code> is padded to make its
-length a multiple of 3 bytes, enabling clean base64 encoding without
-padding characters.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
-<p id="section-4.4-2">The final output is encoded using URL-safe base64 <span>[<a href="#RFC4648" class="cite xref">RFC4648</a>]</span>.<a href="#section-4.4-2" class="pilcrow">¶</a></p>
+<p id="section-4.4-1">To enable clean base64url encoding without padding characters (‘=’), each
+encrypted component pair <code>(SIV || ciphertext)</code> is padded to a multiple of 3 bytes.
+This is necessary because base64 encoding processes 3 bytes at a time to produce
+4 characters of output.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
+<p id="section-4.4-2">The padding calculation <code>(3 - (16 + component_len) % 3) % 3</code> ensures:
+- If <code>(16 + component_len) % 3 = 0</code>: no padding needed (already aligned)
+- If <code>(16 + component_len) % 3 = 1</code>: add 2 bytes of padding
+- If <code>(16 + component_len) % 3 = 2</code>: add 1 byte of padding<a href="#section-4.4-2" class="pilcrow">¶</a></p>
+<p id="section-4.4-3">The final output is encoded using URL-safe base64 <span>[<a href="#RFC4648" class="cite xref">RFC4648</a>]</span>, with ‘-‘ replacing
+‘+’ and ‘_’ replacing ‘/’ for URI compatibility.<a href="#section-4.4-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2477,6 +2493,8 @@ function uricrypt_encrypt(secret_key, context, uri_string):
      keystream_xof.update(siv)
 
      // Calculate padding for base64 encoding alignment
+     // The total bytes (SIV + component) must be a multiple of 3
+     // to produce clean base64 output without padding characters
      component_len = len(component)
      padding_len = (3 - (16 + component_len) % 3) % 3
 
@@ -2604,7 +2622,10 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
 <pre>
 function calculate_padding(component_len):
   // Calculate padding needed for base64 encoding alignment
-  return (3 - (16 + component_len) % 3) % 3
+  // The combined SIV (16 bytes) + component must be divisible by 3
+  // for clean base64 encoding without '=' padding characters
+  total_len = 16 + component_len
+  return (3 - total_len % 3) % 3
 
 function base64_urlsafe_no_pad_encode(data):
   // Use standard base64 encoding
