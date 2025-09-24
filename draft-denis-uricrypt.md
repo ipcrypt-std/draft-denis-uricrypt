@@ -495,7 +495,7 @@ Steps:
 3.  `encrypted_output = empty byte array`
 4.  For each component:
       - `Update components_xof with component`
-      - `SIV = components_xof.read(16)`
+      - `SIV = components_xof.clone().read(16)`
       - `keystream_xof = base_keystream_xof.clone()`
       - `keystream_xof.update(SIV)`
       - `padding_len = (3 - (16 + len(component)) % 3) % 3`
@@ -530,7 +530,7 @@ Steps:
       - `padded_plaintext = encrypted_part XOR keystream`
       - `component = remove_padding(padded_plaintext)`
       - Update `components_xof` with component
-      - `expected_SIV = components_xof.read(16)`
+      - `expected_SIV = components_xof.clone().read(16)`
       - If `constant_time_compare(SIV, expected_SIV) == false`: return `error`
       - `decrypted_components.append(component)`
 
