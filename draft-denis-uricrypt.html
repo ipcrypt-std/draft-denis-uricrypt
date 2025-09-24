@@ -1773,8 +1773,8 @@ base_keystream_xof.update("KS")
 <p id="section-4.1-7">Note on XOF cloning: The <code>.clone()</code> operation creates a new XOF instance with
 an identical internal state, preserving all previously absorbed data. After
 cloning, the original and cloned XOFs can be updated and read from
-independently. This allows the components_xof to maintain a running state
-across all components while base_keystream_xof remains unchanged for creating
+independently. This allows the <code>components_xof</code> to maintain a running state
+across all components while <code>base_keystream_xof</code> remains unchanged for creating
 per-component keystreams.<a href="#section-4.1-7" class="pilcrow">¶</a></p>
 </section>
 </div>
