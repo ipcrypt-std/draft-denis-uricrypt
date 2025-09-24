@@ -313,12 +313,12 @@ for:
 * Generating keystream for encryption/decryption
 * All hash operations in the initialization
 
-TurboSHAKE128 is specified in {{!I-D.draft-irtf-cfrg-kangarootwelve}}} and provides the security
+TurboSHAKE128 is specified in {{!I-D.draft-irtf-cfrg-kangarootwelve}} and provides the security
 properties needed for this construction.
 
 ## Key and Context Handling
 
-The secret_key MUST be at least 16 bytes long. Keys shorter than 16
+The secret key MUST be at least 16 bytes long. Keys shorter than 16
 bytes MUST be rejected. Implementations SHOULD validate that the key
 does not consist of repeated patterns (e.g., identical first and
 second halves) as a best practice.
@@ -356,11 +356,13 @@ URICrypt provides the following cryptographic security guarantees:
 ## Confidentiality
 
 URICrypt achieves semantic security for URI path components through its use of TurboSHAKE128 as a pseudorandom function. Each component is encrypted using a unique keystream derived from:
+
 - The secret key
 - The application context
 - A synthetic initialization vector (SIV) that depends on all preceding components
 
 This construction ensures that:
+
 - An attacker without the secret key cannot recover plaintext components from ciphertexts
 - The keystream generation is computationally indistinguishable from random for each unique (key, context, path-prefix) tuple
 - Components are protected by at least 128 bits of security against brute-force attacks
@@ -368,6 +370,7 @@ This construction ensures that:
 ## Authenticity and Integrity
 
 Each URI component is authenticated through the SIV mechanism:
+
 - The SIV acts as a Message Authentication Code (MAC) computed over the component and all preceding components
 - Any modification to a component will cause the SIV verification to fail during decryption
 - The chained construction ensures that reordering, insertion, or deletion of components is detected
@@ -693,41 +696,46 @@ function base64_urlsafe_no_pad_decode(encoded):
 
 # Test Vectors
 
+These test vectors were generated using the reference Rust implementation
+of URICrypt with TurboSHAKE128.
+
+~~~
+Test Configuration:
+secret_key (hex): 0102030405060708090a0b0c0d0e0f10
+context: "test-context"
+~~~
+
 ## Test Vector 1: Full URI
 
 ~~~
-Input:
-secret_key: 0x0102030405060708090a0b0c0d0e0f10
-context: "test-context"
-uri: "https://example.com/a/b/c"
-
-Expected Output:
-"https://AbCdEfGhIjKlMnOpQrStUvWxYz"
-
-(Actual test vectors will be generated from a reference
-implementation)
+Input: "https://example.com/a/b/c"
+Output: "https://HOGo9vauZ3b3xsPNPQng5apSzL5V7QW94C7USgN8mHZJ337AKSWOucUwMuD-uUfF95SsSHCNgBkXUnH1uGll_YtBltXSqKEHNcYJJwbdFdhfWz19"
 ~~~
 
 ## Test Vector 2: Path-Only URI
 
 ~~~
-Input:
-secret_key: 0x0102030405060708090a0b0c0d0e0f10
-context: "test-context"
-uri: "/a/b/c"
-
-Expected Output:
-"/AbCdEfGhIjKlMnOpQrStUvWxYz"
+Input: "/a/b/c"
+Output: "/b9bCOhqZsvU9XxGOMk6d8QFQhTIdI_xYKpds2lWXpZCms5-az9wtfUft3rec3d9YkUo0N7VcxO5MXfxE5UobvgTJX8UpRdNN"
 ~~~
 
 ## Test Vector 3: Multi-Component Path
 
 ~~~
-Input:
-secret_key: 0x0102030405060708090a0b0c0d0e0f10
-context: "test-context"
-uri: "https://cdn.example.com/videos/2025/03/file.mp4"
+Input: "https://cdn.example.com/videos/2025/03/file.mp4"
+Output: "https://hxUM2N3txwYjGxjvCpWn30SznxR0v0fDbkSQgCTXCUu7Rq8iSbWP40OvYxKs9zC3kw1JNzAc4Wuj7RZvRd0VUprJWLs5KJPnWsA9Kguxa_J7XviTS3GTqf-XZdPxYyq1Y1MXVE9_4ojHwm6jBDUkVthAkuNe5Cqk_h6d"
+~~~
 
-Expected Output:
-"https://AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"
+## Test Vector 4: Root with Scheme
+
+~~~
+Input: "https://example.com/"
+Output: "https://HOGo9vauZ3b3xsPNPQng5apSzL5V7QW94C7USgN8"
+~~~
+
+## Test Vector 5: Simple Path
+
+~~~
+Input: "/path/to/resource"
+Output: "/b9bCOhqZsvU9XxGOMk6d8QFQPTuMlsQKDBhAbc77JvsdRj0kxiFipunATQmmCkNhAe0BPP2EqQoxORElY_ukfUYSrr9mIMfiO9joa3Kn5RS7eSKr"
 ~~~
