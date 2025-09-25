@@ -4,8 +4,8 @@
 
 Network Working Group                                           F. Denis
 Internet-Draft                                               Fastly Inc.
-Intended status: Informational                         24 September 2025
-Expires: 28 March 2026
+Intended status: Informational                         25 September 2025
+Expires: 29 March 2026
 
 
                  Prefix-Preserving Encryption for URIs
@@ -43,7 +43,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 28 March 2026.
+   This Internet-Draft will expire on 29 March 2026.
 
 Copyright Notice
 
