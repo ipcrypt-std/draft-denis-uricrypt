@@ -1827,7 +1827,7 @@ padding_len = (3 - total_bytes % 3) % 3
 </li>
         </ul>
 <p id="section-4.2-7">Important: The <code>components_xof</code> maintains state across all components. After
-generating the SIV for component <code>N</code>, the XOF can be updated with component <code>N+1</code>’s
+generating the SIV for component N, the XOF can be updated with component N+1’s
 plaintext. This chaining ensures that each component’s encryption depends on
 all previous components, thus enabling the prefix-preserving property.<a href="#section-4.2-7" class="pilcrow">¶</a></p>
 </section>
