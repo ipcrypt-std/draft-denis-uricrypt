@@ -456,7 +456,7 @@ This formula calculates:
 - The outer modulo handles the case where `total_bytes` is already a multiple of 3
 
 Important: The `components_xof` maintains state across all components. After
-generating the SIV for component N, the XOF can be updated with component N+1's
+generating the SIV for component `N`, the XOF can be updated with component `N+1`'s
 plaintext. This chaining ensures that each component's encryption depends on
 all previous components, thus enabling the prefix-preserving property.
 
