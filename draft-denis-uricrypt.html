@@ -1855,7 +1855,7 @@ all previous components, thus enabling the prefix-preserving property.<a href="#
                 <p id="section-4.3-2.3.2.2.1">XOR each encrypted byte with its corresponding keystream byte<a href="#section-4.3-2.3.2.2.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-4.3-2.3.2.3">
-                <p id="section-4.3-2.3.2.3.1">Check each decrypted byte for component terminators (‘/’, ‘?’, ‘#’)<a href="#section-4.3-2.3.2.3.1" class="pilcrow">¶</a></p>
+                <p id="section-4.3-2.3.2.3.1">Check each decrypted byte for component terminators (<code>'/'</code>, <code>'?'</code>, <code>'#'</code>)<a href="#section-4.3-2.3.2.3.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-4.3-2.3.2.4">
                 <p id="section-4.3-2.3.2.4.1">When a terminator is found, the component is complete.<a href="#section-4.3-2.3.2.4.1" class="pilcrow">¶</a></p>
@@ -1886,7 +1886,7 @@ all previous components, thus enabling the prefix-preserving property.<a href="#
 <p id="section-4.3.1-1">During decryption, component boundaries are discovered dynamically by examining the decrypted plaintext:<a href="#section-4.3.1-1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-4.3.1-2.1">
-              <p id="section-4.3.1-2.1.1">Each component (except possibly the last) ends with a terminator character (‘/’, ‘?’, or ‘#’)<a href="#section-4.3.1-2.1.1" class="pilcrow">¶</a></p>
+              <p id="section-4.3.1-2.1.1">Each component (except possibly the last) ends with a terminator character (<code>'/'</code>, <code>'?'</code>, or <code>'#'</code>)<a href="#section-4.3.1-2.1.1" class="pilcrow">¶</a></p>
 </li>
             <li class="normal" id="section-4.3.1-2.2">
               <p id="section-4.3.1-2.2.1">When a terminator is encountered, we know the component is complete<a href="#section-4.3.1-2.2.1" class="pilcrow">¶</a></p>
@@ -1980,7 +1980,7 @@ the algorithms:<a href="#section-5-1" class="pilcrow">¶</a></p>
           <p id="section-5-2.13.1"><code>remove_padding(data)</code>: Removes trailing zero bytes from a byte sequence to recover the original data length.<a href="#section-5-2.13.1" class="pilcrow">¶</a></p>
 </li>
         <li class="normal" id="section-5-2.14">
-          <p id="section-5-2.14.1"><code>join(components)</code>: Combines multiple path components into a single path string, preserving the terminator characters (‘/’, ‘?’, ‘#’) that are included in each component.<a href="#section-5-2.14.1" class="pilcrow">¶</a></p>
+          <p id="section-5-2.14.1"><code>join(components)</code>: Combines multiple path components into a single path string, preserving the terminator characters (<code>'/'</code>, <code>'?'</code>, <code>'#'</code>) that are included in each component.<a href="#section-5-2.14.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
 <div id="encryption-algorithm">
@@ -2109,7 +2109,7 @@ the algorithms:<a href="#section-5-1" class="pilcrow">¶</a></p>
                     <p id="section-5.2-5.6.2.6.2.4.1"><code>component.append(decrypted_byte)</code><a href="#section-5.2-5.6.2.6.2.4.1" class="pilcrow">¶</a></p>
 </li>
                   <li class="normal" id="section-5.2-5.6.2.6.2.5">
-                    <p id="section-5.2-5.6.2.6.2.5.1">If <code>decrypted_byte</code> is ‘/’, ‘?’, or ‘#’:<a href="#section-5.2-5.6.2.6.2.5.1" class="pilcrow">¶</a></p>
+                    <p id="section-5.2-5.6.2.6.2.5.1">If <code>decrypted_byte</code> is <code>'/'</code>, <code>'?'</code>, or <code>'#'</code>:<a href="#section-5.2-5.6.2.6.2.5.1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.2-5.6.2.6.2.5.2.1">
                         <p id="section-5.2-5.6.2.6.2.5.2.1.1"><code>total_len = position - component_start</code><a href="#section-5.2-5.6.2.6.2.5.2.1.1" class="pilcrow">¶</a></p>

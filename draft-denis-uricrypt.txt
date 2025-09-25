@@ -551,8 +551,8 @@ Table of Contents
 
        *  XOR each encrypted byte with its corresponding keystream byte
 
-       *  Check each decrypted byte for component terminators (‘/’, ‘?’,
-          ‘#’)
+       *  Check each decrypted byte for component terminators ('/', '?',
+          '#')
 
        *  When a terminator is found, the component is complete.
 
@@ -573,7 +573,7 @@ Table of Contents
    examining the decrypted plaintext:
 
    *  Each component (except possibly the last) ends with a terminator
-      character (‘/’, ‘?’, or ‘#’)
+      character ('/', '?', or '#')
 
    *  When a terminator is encountered, we know the component is
       complete
@@ -667,7 +667,7 @@ Table of Contents
       sequence to recover the original data length.
 
    *  join(components): Combines multiple path components into a single
-      path string, preserving the terminator characters (‘/’, ‘?’, ‘#’)
+      path string, preserving the terminator characters ('/', '?', '#')
       that are included in each component.
 
 5.1.  Encryption Algorithm
@@ -762,7 +762,7 @@ Table of Contents
 
           -  component.append(decrypted_byte)
 
-          -  If decrypted_byte is ‘/’, ‘?’, or ‘#’:
+          -  If decrypted_byte is '/', '?', or '#':
 
              o  total_len = position - component_start
 
