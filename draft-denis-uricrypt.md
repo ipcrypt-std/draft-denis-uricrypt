@@ -434,7 +434,7 @@ For each component, the encryption process follows a precise sequence
 that ensures both confidentiality and authenticity:
 
 1.  Update `components_xof` with the component plaintext
-2.  Squeeze the SIV from `components_xof` (SIVLEN bytes). This requires cloning `components_xof` before reading, as reading may finalize the XOF.
+2.  Squeeze the SIV from `components_xof` (`SIVLEN` bytes). This requires cloning `components_xof` before reading, as reading may finalize the XOF.
 3.  Create `keystream_xof` by cloning `base_keystream_xof` and updating it with SIV
 4.  Calculate padding needed for base64 encoding
 5.  Generate a keystream of length `(component_length + padding)`
@@ -463,7 +463,7 @@ all previous components, thus enabling the prefix-preserving property.
 
 For each encrypted component, the decryption process is:
 
-1.  Read SIV from input (SIVLEN bytes)
+1.  Read SIV from input (`SIVLEN` bytes)
 2.  Create `keystream_xof` by cloning `base_keystream_xof` and updating it with SIV
 3.  Decrypt bytes incrementally to determine component boundaries:
     - Generate keystream bytes one at a time from the XOF
@@ -623,7 +623,7 @@ properties needed for this construction.
 
 ## Key and Context Handling
 
-The secret key MUST be at least SIVLEN bytes long. Keys shorter than SIVLEN
+The secret key MUST be at least `SIVLEN` bytes long. Keys shorter than `SIVLEN`
 bytes MUST be rejected. Implementations SHOULD validate that the key
 does not consist of repeated patterns (e.g., identical first and
 second halves) as a best practice.
@@ -721,7 +721,7 @@ Key Recovery: TurboSHAKE128's security properties ensure that observing cipherte
 
 The security of URICrypt is bounded by the following:
 
-- Key strength: Minimum 128-bit security with SIVLEN-byte keys
+- Key strength: Minimum 128-bit security with `SIVLEN`-byte keys
 - Collision resistance: 2<sup>64</sup> birthday bound for SIV collisions
 - Authentication security: 2<sup>-128</sup> probability of successful forgery
 - Computational security: Based on TurboSHAKE128's proven security as an XOF
@@ -733,7 +733,7 @@ URICrypt makes specific security trade-offs for functionality, including the fol
 - Deterministic encryption: Same inputs produce same outputs, enabling certain traffic analysis
 - Length preservation: Component lengths are not hidden, potentially revealing information patterns
 - Prefix structure leakage: The hierarchical structure of URIs is preserved by design
-- SIV length configuration: Implementations MAY adjust SIVLEN for different usage bounds. Larger values (24 or 32 bytes) increase birthday bound resistance at the cost of ciphertext expansion. However, 16 bytes is generally recommended as it provides practical collision resistance with acceptable overhead
+- SIV length configuration: Implementations MAY adjust `SIVLEN` for different usage bounds. Larger values (24 or 32 bytes) increase birthday bound resistance at the cost of ciphertext expansion. However, 16 bytes is generally recommended as it provides practical collision resistance with acceptable overhead
 
 These trade-offs are intentional and necessary for the prefix-preserving functionality. Applications requiring stronger privacy guarantees should evaluate whether URICrypt's properties align with their threat model.
 
