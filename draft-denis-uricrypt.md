@@ -619,7 +619,7 @@ for:
 * Generating keystream for encryption/decryption
 * All XOF operations in the initialization
 
-TurboSHAKE128 is specified in {{!I-D.draft-irtf-cfrg-kangarootwelve}} and provides the security
+TurboSHAKE128 is specified in {{!RFC9861}} and provides the security
 properties needed for this construction.
 
 ## Key and Context Handling
