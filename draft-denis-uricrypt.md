@@ -469,7 +469,7 @@ For each encrypted component, the decryption process is:
 3.  Decrypt bytes incrementally to determine component boundaries:
     - Generate keystream bytes one at a time from the XOF
     - XOR each encrypted byte with its corresponding keystream byte
-    - Check each decrypted byte for component terminators ('/', '?', '#')
+    - Check each decrypted byte for component terminators (`'/'`, `'?'`, `'#'`)
     - When a terminator is found, the component is complete.
     - Skip any padding bytes (null bytes) after the component
 4.  Update `components_xof` with the complete plaintext component (including terminator)
@@ -481,7 +481,7 @@ For each encrypted component, the decryption process is:
 
 During decryption, component boundaries are discovered dynamically by examining the decrypted plaintext:
 
-- Each component (except possibly the last) ends with a terminator character ('/', '?', or '#')
+- Each component (except possibly the last) ends with a terminator character (`'/'`, `'?'`, or `'#'`)
 - When a terminator is encountered, we know the component is complete
 - After finding the terminator, we skip padding bytes to align to the next 3-byte boundary.
 - The padding length can be calculated: `padding = (3 - ((SIV_size + bytes_read) % 3)) % 3`
@@ -538,7 +538,7 @@ the algorithms:
 
 * `remove_padding(data)`: Removes trailing zero bytes from a byte sequence to recover the original data length.
 
-* `join(components)`: Combines multiple path components into a single path string, preserving the terminator characters ('/', '?', '#') that are included in each component.
+* `join(components)`: Combines multiple path components into a single path string, preserving the terminator characters (`'/'`, `'?'`, `'#'`) that are included in each component.
 
 ## Encryption Algorithm
 
@@ -595,7 +595,7 @@ Steps:
         - `position = position + 1`
         - If `decrypted_byte == 0x00`: continue (skip padding)
         - `component.append(decrypted_byte)`
-        - If `decrypted_byte` is '/', '?', or '#':
+        - If `decrypted_byte` is `'/'`, `'?'`, or `'#'`:
           - `total_len = position - component_start`
           - `position = position + ((3 - ((SIVLEN + total_len) % 3)) % 3)`
           - Break inner loop
