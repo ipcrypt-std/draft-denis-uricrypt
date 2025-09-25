@@ -451,6 +451,7 @@ padding_len = (3 - total_bytes % 3) % 3
 ~~~
 
 This formula calculates:
+
 - How many bytes are needed to reach the next multiple of 3
 - The outer modulo handles the case where `total_bytes` is already a multiple of 3
 
