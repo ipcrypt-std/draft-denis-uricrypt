@@ -4,8 +4,8 @@
 
 Network Working Group                                           F. Denis
 Internet-Draft                                               Fastly Inc.
-Intended status: Informational                         24 September 2025
-Expires: 28 March 2026
+Intended status: Informational                         26 September 2025
+Expires: 30 March 2026
 
 
                  Prefix-Preserving Encryption for URIs
@@ -43,7 +43,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 28 March 2026.
+   This Internet-Draft will expire on 30 March 2026.
 
 Copyright Notice
 
@@ -183,9 +183,16 @@ Table of Contents
    *  XOF: Extendable-Output Function, a cryptographic function that can
       produce output of arbitrary length.
 
-   *  SIV: Synthetic Initialization Vector, a 16-byte value derived from
-      the accumulated state of all previous components, used for
+   *  SIV: Synthetic Initialization Vector, a value derived from the
+      accumulated state of all previous components, used for
       authentication and as input to keystream generation.
+
+   *  SIVLEN: The length of the Synthetic Initialization Vector in
+      bytes, defined as 16 bytes (128 bits) for this specification.
+
+   *  PADBS: Padding Block Size, the number of bytes to which ciphertext
+      components are aligned.  Defined as 3 bytes for this specification
+      to ensure efficient Base64url encoding without padding characters.
 
    *  Domain Separation: The practice of using distinct inputs to
       cryptographic functions to ensure outputs for different purposes
@@ -325,6 +332,17 @@ Table of Contents
    The leading ‘/’ is explicitly encrypted as a component to maintain
    consistency and enable proper prefix preservation for absolute paths.
 
+   This character receives its own SIV and is encrypted, ensuring that
+   the root path is authenticated like any other path component and that
+   different keys and contexts produce different ciphertexts for that
+   path, consistently with other paths.
+
+   In applications where all paths are guaranteed to be absolute and the
+   '/' path can be considered a special case, ciphertext expansion can
+   be reduced by removing the leading '/' character from the URI prior
+   to encryption, making the path relative with '/' as an implicit
+   current path.
+
 3.2.  Component Reconstruction
 
    During decryption, components are joined to reconstruct the original
@@ -355,7 +373,7 @@ Table of Contents
                | Plaintext absorbed into components_xof
                v
      +-------------------+
-     | SIV1 generation   |------> SIV1 (16 bytes)
+     | SIV1 generation   |------> SIV1 (SIVLEN bytes)
      +-------------------+         |
                                    |
                                    v
@@ -441,13 +459,13 @@ Table of Contents
 
      Input: len(key) || key || len(context) || context
 
-     +------------------------------------------------------+
+     +-----------------------------------------------------+
      | base_xof = TurboSHAKE128(domain_sep=0x1F)           |
      | base_xof.update(len(secret_key))                    |
      | base_xof.update(secret_key)                         |
      | base_xof.update(len(context))                       |
      | base_xof.update(context)                            |
-     +------------------------------------------------------+
+     +-----------------------------------------------------+
                                |
                                v
                   +------------------------+
@@ -497,9 +515,9 @@ Table of Contents
 
    1.  Update components_xof with the component plaintext
 
-   2.  Squeeze the SIV from components_xof (16 bytes).  This requires
-       cloning components_xof before reading, as reading may finalize
-       the XOF.
+   2.  Squeeze the SIV from components_xof (SIVLEN bytes).  This
+       requires cloning components_xof before reading, as reading may
+       finalize the XOF.
 
    3.  Create keystream_xof by cloning base_keystream_xof and updating
        it with SIV
@@ -515,17 +533,20 @@ Table of Contents
    The padding ensures clean base64url encoding without padding
    characters.  Since base64 encoding works with groups of 3 bytes
    (producing 4 characters), we pad each (SIV || encrypted_component)
-   pair to have a length that’s a multiple of 3:
+   pair to have a length that’s a multiple of PADBS:
 
-   total_bytes = 16 (SIV) + component_len
-   padding_len = (3 - total_bytes % 3) % 3
+   total_bytes = SIVLEN (SIV) + component_len
+   padding_len = (PADBS - total_bytes % PADBS) % PADBS
 
-   This formula calculates: - How many bytes are needed to reach the
-   next multiple of 3 - The outer modulo handles the case where
-   total_bytes is already a multiple of 3
+   This formula calculates:
 
-   Important: The components_xof maintains state across all components.
-   After generating the SIV for component N, the XOF can be updated with
+   *  How many bytes are needed to reach the next multiple of PADBS
+
+   *  The outer modulo handles the case where total_bytes is already a
+      multiple of PADBS
+
+   The components_xof maintains state across all components.  After
+   generating the SIV for component N, the XOF can be updated with
    component N+1’s plaintext.  This chaining ensures that each
    component’s encryption depends on all previous components, thus
    enabling the prefix-preserving property.
@@ -534,7 +555,7 @@ Table of Contents
 
    For each encrypted component, the decryption process is:
 
-   1.  Read SIV from input (16 bytes)
+   1.  Read SIV from input (SIVLEN bytes)
 
    2.  Create keystream_xof by cloning base_keystream_xof and updating
        it with SIV
@@ -545,8 +566,8 @@ Table of Contents
 
        *  XOR each encrypted byte with its corresponding keystream byte
 
-       *  Check each decrypted byte for component terminators (‘/’, ‘?’,
-          ‘#’)
+       *  Check each decrypted byte for component terminators ('/', '?',
+          '#')
 
        *  When a terminator is found, the component is complete.
 
@@ -567,16 +588,16 @@ Table of Contents
    examining the decrypted plaintext:
 
    *  Each component (except possibly the last) ends with a terminator
-      character (‘/’, ‘?’, or ‘#’)
+      character ('/', '?', or '#')
 
    *  When a terminator is encountered, we know the component is
       complete
 
    *  After finding the terminator, we skip padding bytes to align to
-      the next 3-byte boundary.
+      the next PADBS-byte boundary.
 
-   *  The padding length can be calculated: padding = (3 - ((SIV_size +
-      bytes_read) % 3)) % 3
+   *  The padding length can be calculated: padding = (PADBS -
+      ((SIV_size + bytes_read) % PADBS)) % PADBS
 
    This approach eliminates the need for explicit length encoding, as
    the component structure itself provides the necessary boundary
@@ -589,18 +610,24 @@ Table of Contents
 
    To enable clean base64url encoding without padding characters (‘=’),
    each encrypted component pair (SIV || ciphertext) is padded to be a
-   multiple of 3 bytes.  This is necessary because base64 encoding
+   multiple of PADBS bytes.  This is necessary because base64 encoding
    processes 3 bytes at a time to produce 4 characters of output.
 
-   The padding calculation (3 - (16 + component_len) % 3) % 3 ensures
-   the following:
+   The padding calculation (PADBS - (SIVLEN + component_len) % PADBS) %
+   PADBS ensures the following:
 
-   *  If (16 + component_len) % 3 = 0: no padding needed (already
-      aligned)
+   *  If (SIVLEN + component_len) % PADBS = 0: no padding needed
+      (already aligned)
 
-   *  If (16 + component_len) % 3 = 1: add 2 bytes of padding
+   *  If (SIVLEN + component_len) % PADBS = 1: add 2 bytes of padding
 
-   *  If (16 + component_len) % 3 = 2: add 1 byte of padding
+   *  If (SIVLEN + component_len) % PADBS = 2: add 1 byte of padding
+
+   With the default value of PADBS=3, this padding scheme provides
+   partial length-hiding.  For example, with SIVLEN=16, components
+   “abc”, “abcd”, and “abcde” all produce 21-byte outputs after padding.
+   Without the secret key, a passive adversary cannot determine the
+   exact original component size.
 
    The final output is encoded using URL-safe base64 [RFC4648], with ‘-‘
    replacing ‘+’ and ‘_’ replacing ‘/’ for URI compatibility.
@@ -661,7 +688,7 @@ Table of Contents
       sequence to recover the original data length.
 
    *  join(components): Combines multiple path components into a single
-      path string, preserving the terminator characters (‘/’, ‘?’, ‘#’)
+      path string, preserving the terminator characters ('/', '?', '#')
       that are included in each component.
 
 5.1.  Encryption Algorithm
@@ -682,13 +709,14 @@ Table of Contents
 
        *  Update components_xof with component.
 
-       *  SIV = components_xof.clone().read(16).
+       *  SIV = components_xof.clone().read(SIVLEN).
 
        *  keystream_xof = base_keystream_xof.clone().
 
        *  keystream_xof.update(SIV).
 
-       *  padding_len = (3 - (16 + len(component)) % 3) % 3.
+       *  padding_len = (PADBS - (SIVLEN + len(component)) % PADBS) %
+          PADBS.
 
        *  keystream = keystream_xof.read(len(component) + padding_len).
 
@@ -734,16 +762,16 @@ Table of Contents
 
    6.  While position < len(decoded):
 
-       *  SIV = decoded[position:position+16].  If not enough bytes,
+       *  SIV = decoded[position:position+SIVLEN].  If not enough bytes,
           return error.
 
        *  keystream_xof = base_keystream_xof.clone().update(SIV).
 
-       *  component_start = position + 16
+       *  component_start = position + SIVLEN
 
        *  component = empty byte array
 
-       *  position = position + 16
+       *  position = position + SIVLEN
 
        *  While position < len(decoded):
 
@@ -756,17 +784,18 @@ Table of Contents
 
           -  component.append(decrypted_byte)
 
-          -  If decrypted_byte is ‘/’, ‘?’, or ‘#’:
+          -  If decrypted_byte is '/', '?', or '#':
 
              o  total_len = position - component_start
 
-             o  position = position + ((3 - ((16 + total_len) % 3)) % 3)
+             o  position = position + ((PADBS - ((SIVLEN + total_len) %
+                PADBS)) % PADBS)
 
              o  Break inner loop
 
        *  Update components_xof with component.
 
-       *  expected_SIV = components_xof.clone().read(16).
+       *  expected_SIV = components_xof.clone().read(SIVLEN).
 
        *  If constant_time_compare(SIV, expected_SIV) == false, return
           error.
@@ -791,15 +820,15 @@ Table of Contents
 
    *  All XOF operations in the initialization
 
-   TurboSHAKE128 is specified in [I-D.draft-irtf-cfrg-kangarootwelve]
-   and provides the security properties needed for this construction.
+   TurboSHAKE128 is specified in [RFC9861] and provides the security
+   properties needed for this construction.
 
 6.2.  Key and Context Handling
 
-   The secret key MUST be at least 16 bytes long.  Keys shorter than 16
-   bytes MUST be rejected.  Implementations SHOULD validate that the key
-   does not consist of repeated patterns (e.g., identical first and
-   second halves) as a best practice.
+   The secret key MUST be at least SIVLEN bytes long.  Keys shorter than
+   SIVLEN bytes MUST be rejected.  Implementations SHOULD validate that
+   the key does not consist of repeated patterns (e.g., identical first
+   and second halves) as a best practice.
 
    The context parameter is a string that provides domain separation.
    Different applications SHOULD use different context strings to
@@ -930,7 +959,7 @@ Table of Contents
 
    The security of URICrypt is bounded by the following:
 
-   *  Key strength: Minimum 128-bit security with 16-byte keys
+   *  Key strength: Minimum 128-bit security with SIVLEN-byte keys
 
    *  Collision resistance: 2^64 birthday bound for SIV collisions
 
@@ -947,11 +976,24 @@ Table of Contents
    *  Deterministic encryption: Same inputs produce same outputs,
       enabling certain traffic analysis
 
-   *  Length preservation: Component lengths are not hidden, potentially
-      revealing information patterns
+   *  Partial length obfuscation: With PADBS=3, exact component lengths
+      are partially hidden
 
    *  Prefix structure leakage: The hierarchical structure of URIs is
       preserved by design
+
+   *  SIV length configuration: Implementations MAY adjust SIVLEN for
+      different usage bounds.  Larger values (24 or 32 bytes) increase
+      birthday bound resistance at the cost of ciphertext expansion.
+      However, 16 bytes is generally recommended as it provides
+      practical collision resistance with acceptable overhead
+
+   *  Padding block size configuration: The default PADBS=3 already
+      provides partial length-hiding.  Implementations MAY adjust PADBS
+      to increase size obfuscation.  Larger values create larger size
+      buckets but increase ciphertext expansion.  The value MUST remain
+      a multiple of 3 to ensure efficient Base64url encoding without
+      padding characters
 
    These trade-offs are intentional and necessary for the prefix-
    preserving functionality.  Applications requiring stronger privacy
@@ -990,9 +1032,10 @@ Table of Contents
       SIV mechanism.  Any modification, reordering, or truncation of
       components will be detected during decryption.
 
-   *  Length Leakage: The length of each component is preserved in the
-      encrypted output.  Applications sensitive to length information
-      SHOULD consider padding components to fixed lengths.
+   *  Length Obfuscation: The default PADBS=3 configuration provides
+      partial length-hiding.  Applications requiring stronger length-
+      hiding SHOULD consider using larger PADBS values or padding
+      components to fixed lengths.
 
    *  Key Reuse: Using the same key with different contexts is safe, but
       using the same (key, context) pair for different applications is
@@ -1017,13 +1060,6 @@ Normative References
               <https://datatracker.ietf.org/doc/html/draft-denis-
               ipcrypt-12>.
 
-   [I-D.draft-irtf-cfrg-kangarootwelve]
-              Viguier, B., Wong, D., Van Assche, G., Dang, Q., and J.
-              Daemen, "KangarooTwelve and TurboSHAKE", Work in Progress,
-              Internet-Draft, draft-irtf-cfrg-kangarootwelve-17, 21
-              February 2025, <https://datatracker.ietf.org/doc/html/
-              draft-irtf-cfrg-kangarootwelve-17>.
-
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
               DOI 10.17487/RFC2119, March 1997,
@@ -1046,6 +1082,8 @@ Normative References
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+   [RFC9861]  "*** BROKEN REFERENCE ***".
 
 Appendix A.  Pseudocode
 
@@ -1124,18 +1162,18 @@ A.3.  Encryption Algorithm
         // Update components XOF for SIV computation
         components_xof.update(component)
 
-        // Generate 16-byte Synthetic Initialization Vector (SIV)
-        siv = components_xof.squeeze(16)
+        // Generate SIVLEN-byte Synthetic Initialization Vector (SIV)
+        siv = components_xof.squeeze(SIVLEN)
 
         // Create keystream XOF for this component
         keystream_xof = base_keystream_xof.clone()
         keystream_xof.update(siv)
 
         // Calculate padding for base64 encoding alignment
-        // The total bytes (SIV + component) must be a multiple of 3
+        // The total bytes (SIV + component) must be a multiple of PADBS
         // to produce clean base64 output without padding characters
         component_len = len(component)
-        padding_len = (3 - (16 + component_len) % 3) % 3
+        padding_len = (PADBS - (SIVLEN + component_len) % PADBS) % PADBS
 
         // Generate keystream
         keystream = keystream_xof.squeeze(component_len + padding_len)
@@ -1189,8 +1227,8 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
   // Process each component
   while not input_stream.empty():
      // Read SIV
-     siv = input_stream.read(16)
-     if len(siv) != 16:
+     siv = input_stream.read(SIVLEN)
+     if len(siv) != SIVLEN:
         return error("Decryption failed")
 
      // Create keystream XOF
@@ -1205,8 +1243,8 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      // Find valid component length by checking padding alignment
      component_data = None
      for possible_len in range(1, remaining + 1):
-        total_len = 16 + possible_len
-        padding_len = (3 - total_len % 3) % 3
+        total_len = SIVLEN + possible_len
+        padding_len = (PADBS - total_len % PADBS) % PADBS
         if possible_len >= padding_len:
            component_data = input_stream.peek(possible_len)
            break
@@ -1222,14 +1260,14 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      padded_plaintext = xor_bytes(encrypted_part, keystream)
 
      // Remove padding bytes added for base64 alignment
-     padding_len = (3 - (16 + len(encrypted_part)) % 3) % 3
+     padding_len = (PADBS - (SIVLEN + len(encrypted_part)) % PADBS) % PADBS
      component = padded_plaintext[:-padding_len] if padding_len > 0 else padded_plaintext
 
      // Update XOF with plaintext
      components_xof.update(component)
 
      // Generate expected SIV
-     expected_siv = components_xof.squeeze(16)
+     expected_siv = components_xof.squeeze(SIVLEN)
 
      // Authenticate using constant-time comparison to prevent timing attacks
      if not constant_time_equal(siv, expected_siv):
@@ -1248,32 +1286,32 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
 
 A.5.  Padding and Encoding
 
-   function calculate_padding(component_len):
-     // Calculate padding needed for base64 encoding alignment
-     // The combined SIV (16 bytes) + component must be divisible by 3
-     // for clean base64 encoding without '=' padding characters
-     total_len = 16 + component_len
-     return (3 - total_len % 3) % 3
+function calculate_padding(component_len):
+  // Calculate padding needed for base64 encoding alignment
+  // The combined SIV (SIVLEN bytes) + component must be divisible by PADBS
+  // for clean base64 encoding without '=' padding characters
+  total_len = SIVLEN + component_len
+  return (3 - total_len % 3) % 3
 
-   function base64_urlsafe_no_pad_encode(data):
-     // Use standard base64 encoding
-     encoded = standard_base64_encode(data)
-     // Make URL-safe and remove padding for URI compatibility
-     encoded = encoded.replace('+', '-')
-                      .replace('/', '_')
-                      .rstrip('=')
-     return encoded
+function base64_urlsafe_no_pad_encode(data):
+  // Use standard base64 encoding
+  encoded = standard_base64_encode(data)
+  // Make URL-safe and remove padding for URI compatibility
+  encoded = encoded.replace('+', '-')
+                   .replace('/', '_')
+                   .rstrip('=')
+  return encoded
 
-   function base64_urlsafe_no_pad_decode(encoded):
-     // Add padding if needed for standard decoder
-     padding = (4 - len(encoded) % 4) % 4
-     if padding > 0:
-        encoded = encoded + ('=' * padding)
-     // Make standard base64
-     encoded = encoded.replace('-', '+')
-                      .replace('_', '/')
-     // Decode
-     return standard_base64_decode(encoded)
+function base64_urlsafe_no_pad_decode(encoded):
+  // Add padding if needed for standard decoder
+  padding = (4 - len(encoded) % 4) % 4
+  if padding > 0:
+     encoded = encoded + ('=' * padding)
+  // Make standard base64
+  encoded = encoded.replace('-', '+')
+                   .replace('_', '/')
+  // Decode
+  return standard_base64_decode(encoded)
 
 Appendix B.  Test Vectors
 
