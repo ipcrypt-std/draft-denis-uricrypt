@@ -517,12 +517,10 @@ The padding calculation `(PADBS - (SIVLEN + component_len) % PADBS) % PADBS` ens
 - If `(SIVLEN + component_len) % PADBS = 1`: add 2 bytes of padding
 - If `(SIVLEN + component_len) % PADBS = 2`: add 1 byte of padding
 
-With the default value of PADBS=3, this padding scheme provides partial length-hiding:
-components with consecutive byte lengths produce ciphertexts of the same size. For example,
-with SIVLEN=16, components of length 3, 4, and 5 bytes all produce 21-byte outputs after
-padding. This creates size buckets where multiple plaintext lengths map to the same
-ciphertext length, preventing passive adversaries from determining exact component sizes
-without the secret key.
+With the default value of `PADBS=3`, this padding scheme provides partial length-hiding.
+For example, with `SIVLEN=16`, components "abc", "abcd", and "abcde" all produce 21-byte
+outputs after padding. Without the secret key, a passive adversary cannot determine
+the exact original component size.
 
 The final output is encoded using URL-safe base64 {{!RFC4648}}, with '-' replacing
 '+' and '_' replacing '/' for URI compatibility.
@@ -753,10 +751,10 @@ The security of URICrypt is bounded by the following:
 URICrypt makes specific security trade-offs for functionality, including the following:
 
 - Deterministic encryption: Same inputs produce same outputs, enabling certain traffic analysis
-- Partial length obfuscation: With PADBS=3, exact component lengths are partially hidden as multiple consecutive lengths produce identical ciphertext sizes
+- Partial length obfuscation: With `PADBS=3`, exact component lengths are partially hidden
 - Prefix structure leakage: The hierarchical structure of URIs is preserved by design
 - SIV length configuration: Implementations MAY adjust `SIVLEN` for different usage bounds. Larger values (24 or 32 bytes) increase birthday bound resistance at the cost of ciphertext expansion. However, 16 bytes is generally recommended as it provides practical collision resistance with acceptable overhead
-- Padding block size configuration: The default PADBS=3 already provides partial length-hiding by grouping consecutive component lengths into the same ciphertext size. Implementations MAY adjust `PADBS` to increase size obfuscation. Larger values create larger size buckets but increase ciphertext expansion. The value MUST remain a multiple of 3 to ensure efficient Base64url encoding without padding characters
+- Padding block size configuration: The default `PADBS=3` already provides partial length-hiding. Implementations MAY adjust `PADBS` to increase size obfuscation. Larger values create larger size buckets but increase ciphertext expansion. The value MUST remain a multiple of 3 to ensure efficient Base64url encoding without padding characters
 
 These trade-offs are intentional and necessary for the prefix-preserving functionality. Applications requiring stronger privacy guarantees should evaluate whether URICrypt's properties align with their threat model.
 
@@ -791,10 +789,9 @@ but only with knowledge of the secret key. The security properties depend on:
   the SIV mechanism. Any modification, reordering, or truncation of
   components will be detected during decryption.
 
-* Length Obfuscation: The default PADBS=3 configuration provides partial
-  length-hiding, where components with consecutive byte lengths produce
-  identical ciphertext sizes. Applications requiring stronger length-hiding
-  SHOULD consider using larger PADBS values or padding components to fixed lengths.
+* Length Obfuscation: The default `PADBS=3` configuration provides partial
+  length-hiding. Applications requiring stronger length-hiding
+  SHOULD consider using larger `PADBS` values or padding components to fixed lengths.
 
 * Key Reuse: Using the same key with different contexts is safe, but
   using the same (key, context) pair for different applications is
