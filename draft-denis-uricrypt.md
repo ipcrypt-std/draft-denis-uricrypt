@@ -260,6 +260,16 @@ Components:
 The leading '/' is explicitly encrypted as a component to maintain
 consistency and enable proper prefix preservation for absolute paths.
 
+This character receives its own SIV and is encrypted, ensuring that the
+root path is authenticated like any other path component and that
+different keys and contexts produce different ciphertexts for that path,
+consistently with other paths.
+
+In applications where all paths are guaranteed to be absolute and the `'/'` path
+can be considered a special case, ciphertext expansion can be reduced by
+removing the leading `'/'` character from the URI prior to encryption,
+making the path relative with `'/'` as an implicit current path.
+
 ## Component Reconstruction
 
 During decryption, components are joined to reconstruct the original
