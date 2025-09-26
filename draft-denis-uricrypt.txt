@@ -4,8 +4,8 @@
 
 Network Working Group                                           F. Denis
 Internet-Draft                                               Fastly Inc.
-Intended status: Informational                         25 September 2025
-Expires: 29 March 2026
+Intended status: Informational                         26 September 2025
+Expires: 30 March 2026
 
 
                  Prefix-Preserving Encryption for URIs
@@ -43,7 +43,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 29 March 2026.
+   This Internet-Draft will expire on 30 March 2026.
 
 Copyright Notice
 
@@ -189,6 +189,10 @@ Table of Contents
 
    *  SIVLEN: The length of the Synthetic Initialization Vector in
       bytes, defined as 16 bytes (128 bits) for this specification.
+
+   *  PADBS: Padding Block Size, the number of bytes to which ciphertext
+      components are aligned.  Defined as 3 bytes for this specification
+      to ensure efficient Base64url encoding without padding characters.
 
    *  Domain Separation: The practice of using distinct inputs to
       cryptographic functions to ensure outputs for different purposes
@@ -518,17 +522,17 @@ Table of Contents
    The padding ensures clean base64url encoding without padding
    characters.  Since base64 encoding works with groups of 3 bytes
    (producing 4 characters), we pad each (SIV || encrypted_component)
-   pair to have a length that’s a multiple of 3:
+   pair to have a length that’s a multiple of PADBS:
 
    total_bytes = SIVLEN (SIV) + component_len
-   padding_len = (3 - total_bytes % 3) % 3
+   padding_len = (PADBS - total_bytes % PADBS) % PADBS
 
    This formula calculates:
 
-   *  How many bytes are needed to reach the next multiple of 3
+   *  How many bytes are needed to reach the next multiple of PADBS
 
    *  The outer modulo handles the case where total_bytes is already a
-      multiple of 3
+      multiple of PADBS
 
    The components_xof maintains state across all components.  After
    generating the SIV for component N, the XOF can be updated with
@@ -579,10 +583,10 @@ Table of Contents
       complete
 
    *  After finding the terminator, we skip padding bytes to align to
-      the next 3-byte boundary.
+      the next PADBS-byte boundary.
 
-   *  The padding length can be calculated: padding = (3 - ((SIV_size +
-      bytes_read) % 3)) % 3
+   *  The padding length can be calculated: padding = (PADBS -
+      ((SIV_size + bytes_read) % PADBS)) % PADBS
 
    This approach eliminates the need for explicit length encoding, as
    the component structure itself provides the necessary boundary
@@ -595,18 +599,18 @@ Table of Contents
 
    To enable clean base64url encoding without padding characters (‘=’),
    each encrypted component pair (SIV || ciphertext) is padded to be a
-   multiple of 3 bytes.  This is necessary because base64 encoding
+   multiple of PADBS bytes.  This is necessary because base64 encoding
    processes 3 bytes at a time to produce 4 characters of output.
 
-   The padding calculation (3 - (SIVLEN + component_len) % 3) % 3
-   ensures the following:
+   The padding calculation (PADBS - (SIVLEN + component_len) % PADBS) %
+   PADBS ensures the following:
 
-   *  If (SIVLEN + component_len) % 3 = 0: no padding needed (already
-      aligned)
+   *  If (SIVLEN + component_len) % PADBS = 0: no padding needed
+      (already aligned)
 
-   *  If (SIVLEN + component_len) % 3 = 1: add 2 bytes of padding
+   *  If (SIVLEN + component_len) % PADBS = 1: add 2 bytes of padding
 
-   *  If (SIVLEN + component_len) % 3 = 2: add 1 byte of padding
+   *  If (SIVLEN + component_len) % PADBS = 2: add 1 byte of padding
 
    The final output is encoded using URL-safe base64 [RFC4648], with ‘-‘
    replacing ‘+’ and ‘_’ replacing ‘/’ for URI compatibility.
@@ -694,7 +698,8 @@ Table of Contents
 
        *  keystream_xof.update(SIV).
 
-       *  padding_len = (3 - (SIVLEN + len(component)) % 3) % 3.
+       *  padding_len = (PADBS - (SIVLEN + len(component)) % PADBS) %
+          PADBS.
 
        *  keystream = keystream_xof.read(len(component) + padding_len).
 
@@ -766,8 +771,8 @@ Table of Contents
 
              o  total_len = position - component_start
 
-             o  position = position + ((3 - ((SIVLEN + total_len) % 3))
-                % 3)
+             o  position = position + ((PADBS - ((SIVLEN + total_len) %
+                PADBS)) % PADBS)
 
              o  Break inner loop
 
@@ -966,6 +971,12 @@ Table of Contents
       However, 16 bytes is generally recommended as it provides
       practical collision resistance with acceptable overhead
 
+   *  Padding block size configuration: Implementations MAY adjust PADBS
+      to help hide the size of URI components.  Larger values provide
+      better size obfuscation but increase ciphertext expansion.  The
+      value MUST remain a multiple of 3 to ensure efficient Base64url
+      encoding without padding characters
+
    These trade-offs are intentional and necessary for the prefix-
    preserving functionality.  Applications requiring stronger privacy
    guarantees should evaluate whether URICrypt’s properties align with
@@ -1140,10 +1151,10 @@ A.3.  Encryption Algorithm
         keystream_xof.update(siv)
 
         // Calculate padding for base64 encoding alignment
-        // The total bytes (SIV + component) must be a multiple of 3
+        // The total bytes (SIV + component) must be a multiple of PADBS
         // to produce clean base64 output without padding characters
         component_len = len(component)
-        padding_len = (3 - (SIVLEN + component_len) % 3) % 3
+        padding_len = (PADBS - (SIVLEN + component_len) % PADBS) % PADBS
 
         // Generate keystream
         keystream = keystream_xof.squeeze(component_len + padding_len)
@@ -1214,7 +1225,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      component_data = None
      for possible_len in range(1, remaining + 1):
         total_len = SIVLEN + possible_len
-        padding_len = (3 - total_len % 3) % 3
+        padding_len = (PADBS - total_len % PADBS) % PADBS
         if possible_len >= padding_len:
            component_data = input_stream.peek(possible_len)
            break
@@ -1230,7 +1241,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      padded_plaintext = xor_bytes(encrypted_part, keystream)
 
      // Remove padding bytes added for base64 alignment
-     padding_len = (3 - (SIVLEN + len(encrypted_part)) % 3) % 3
+     padding_len = (PADBS - (SIVLEN + len(encrypted_part)) % PADBS) % PADBS
      component = padded_plaintext[:-padding_len] if padding_len > 0 else padded_plaintext
 
      // Update XOF with plaintext
@@ -1256,32 +1267,32 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
 
 A.5.  Padding and Encoding
 
- function calculate_padding(component_len):
-   // Calculate padding needed for base64 encoding alignment
-   // The combined SIV (SIVLEN bytes) + component must be divisible by 3
-   // for clean base64 encoding without '=' padding characters
-   total_len = SIVLEN + component_len
-   return (3 - total_len % 3) % 3
+function calculate_padding(component_len):
+  // Calculate padding needed for base64 encoding alignment
+  // The combined SIV (SIVLEN bytes) + component must be divisible by PADBS
+  // for clean base64 encoding without '=' padding characters
+  total_len = SIVLEN + component_len
+  return (3 - total_len % 3) % 3
 
- function base64_urlsafe_no_pad_encode(data):
-   // Use standard base64 encoding
-   encoded = standard_base64_encode(data)
-   // Make URL-safe and remove padding for URI compatibility
-   encoded = encoded.replace('+', '-')
-                    .replace('/', '_')
-                    .rstrip('=')
-   return encoded
+function base64_urlsafe_no_pad_encode(data):
+  // Use standard base64 encoding
+  encoded = standard_base64_encode(data)
+  // Make URL-safe and remove padding for URI compatibility
+  encoded = encoded.replace('+', '-')
+                   .replace('/', '_')
+                   .rstrip('=')
+  return encoded
 
- function base64_urlsafe_no_pad_decode(encoded):
-   // Add padding if needed for standard decoder
-   padding = (4 - len(encoded) % 4) % 4
-   if padding > 0:
-      encoded = encoded + ('=' * padding)
-   // Make standard base64
-   encoded = encoded.replace('-', '+')
-                    .replace('_', '/')
-   // Decode
-   return standard_base64_decode(encoded)
+function base64_urlsafe_no_pad_decode(encoded):
+  // Add padding if needed for standard decoder
+  padding = (4 - len(encoded) % 4) % 4
+  if padding > 0:
+     encoded = encoded + ('=' * padding)
+  // Make standard base64
+  encoded = encoded.replace('-', '+')
+                   .replace('_', '/')
+  // Decode
+  return standard_base64_decode(encoded)
 
 Appendix B.  Test Vectors
 
