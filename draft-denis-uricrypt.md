@@ -108,6 +108,10 @@ Throughout this document, the following terms and conventions apply:
 * SIVLEN: The length of the Synthetic Initialization Vector in bytes,
   defined as 16 bytes (128 bits) for this specification.
 
+* PADBS: Padding Block Size, the number of bytes to which ciphertext
+  components are aligned. Defined as 3 bytes for this specification
+  to ensure efficient Base64url encoding without padding characters.
+
 * Domain Separation: The practice of using distinct inputs to
   cryptographic functions to ensure outputs for different purposes
   are not compatible.
@@ -443,17 +447,17 @@ that ensures both confidentiality and authenticity:
 
 The padding ensures clean base64url encoding without padding characters. Since
 base64 encoding works with groups of 3 bytes (producing 4 characters), we pad each
-`(SIV || encrypted_component)` pair to have a length that's a multiple of 3:
+`(SIV || encrypted_component)` pair to have a length that's a multiple of PADBS:
 
 ~~~
 total_bytes = SIVLEN (SIV) + component_len
-padding_len = (3 - total_bytes % 3) % 3
+padding_len = (PADBS - total_bytes % PADBS) % PADBS
 ~~~
 
 This formula calculates:
 
-- How many bytes are needed to reach the next multiple of 3
-- The outer modulo handles the case where `total_bytes` is already a multiple of 3
+- How many bytes are needed to reach the next multiple of PADBS
+- The outer modulo handles the case where `total_bytes` is already a multiple of PADBS
 
 The `components_xof` maintains state across all components.
 After generating the SIV for component `N`, the XOF can be updated with component `N+1`'s
@@ -483,8 +487,8 @@ During decryption, component boundaries are discovered dynamically by examining 
 
 - Each component (except possibly the last) ends with a terminator character (`'/'`, `'?'`, or `'#'`)
 - When a terminator is encountered, we know the component is complete
-- After finding the terminator, we skip padding bytes to align to the next 3-byte boundary.
-- The padding length can be calculated: `padding = (3 - ((SIV_size + bytes_read) % 3)) % 3`
+- After finding the terminator, we skip padding bytes to align to the next PADBS-byte boundary.
+- The padding length can be calculated: `padding = (PADBS - ((SIV_size + bytes_read) % PADBS)) % PADBS`
 
 This approach eliminates the need for explicit length encoding, as the component structure itself provides the necessary boundary information.
 
@@ -493,15 +497,15 @@ Any tampering with the encrypted data will cause the SIV comparison to fail.
 ## Padding and Encoding
 
 To enable clean base64url encoding without padding characters ('='), each
-encrypted component pair `(SIV || ciphertext)` is padded to be a multiple of 3 bytes.
+encrypted component pair `(SIV || ciphertext)` is padded to be a multiple of PADBS bytes.
 This is necessary because base64 encoding processes 3 bytes at a time to produce
 4 characters of output.
 
-The padding calculation `(3 - (SIVLEN + component_len) % 3) % 3` ensures the following:
+The padding calculation `(PADBS - (SIVLEN + component_len) % PADBS) % PADBS` ensures the following:
 
-- If `(SIVLEN + component_len) % 3 = 0`: no padding needed (already aligned)
-- If `(SIVLEN + component_len) % 3 = 1`: add 2 bytes of padding
-- If `(SIVLEN + component_len) % 3 = 2`: add 1 byte of padding
+- If `(SIVLEN + component_len) % PADBS = 0`: no padding needed (already aligned)
+- If `(SIVLEN + component_len) % PADBS = 1`: add 2 bytes of padding
+- If `(SIVLEN + component_len) % PADBS = 2`: add 1 byte of padding
 
 The final output is encoded using URL-safe base64 {{!RFC4648}}, with '-' replacing
 '+' and '_' replacing '/' for URI compatibility.
@@ -556,7 +560,7 @@ Steps:
       - `SIV = components_xof.clone().read(SIVLEN)`.
       - `keystream_xof = base_keystream_xof.clone()`.
       - `keystream_xof.update(SIV)`.
-      - `padding_len = (3 - (SIVLEN + len(component)) % 3) % 3`.
+      - `padding_len = (PADBS - (SIVLEN + len(component)) % PADBS) % PADBS`.
       - `keystream = keystream_xof.read(len(component) + padding_len)`.
       - `padded_component = component concatenated with zeros(padding_len)`.
       - `encrypted_part = padded_component XOR keystream`.
@@ -597,7 +601,7 @@ Steps:
         - `component.append(decrypted_byte)`
         - If `decrypted_byte` is `'/'`, `'?'`, or `'#'`:
           - `total_len = position - component_start`
-          - `position = position + ((3 - ((SIVLEN + total_len) % 3)) % 3)`
+          - `position = position + ((PADBS - ((SIVLEN + total_len) % PADBS)) % PADBS)`
           - Break inner loop
       - Update `components_xof` with `component`.
       - `expected_SIV = components_xof.clone().read(SIVLEN)`.
@@ -735,6 +739,7 @@ URICrypt makes specific security trade-offs for functionality, including the fol
 - Length preservation: Component lengths are not hidden, potentially revealing information patterns
 - Prefix structure leakage: The hierarchical structure of URIs is preserved by design
 - SIV length configuration: Implementations MAY adjust `SIVLEN` for different usage bounds. Larger values (24 or 32 bytes) increase birthday bound resistance at the cost of ciphertext expansion. However, 16 bytes is generally recommended as it provides practical collision resistance with acceptable overhead
+- Padding block size configuration: Implementations MAY adjust `PADBS` to help hide the size of URI components. Larger values provide better size obfuscation but increase ciphertext expansion. The value MUST remain a multiple of 3 to ensure efficient Base64url encoding without padding characters
 
 These trade-offs are intentional and necessary for the prefix-preserving functionality. Applications requiring stronger privacy guarantees should evaluate whether URICrypt's properties align with their threat model.
 
@@ -879,10 +884,10 @@ function uricrypt_encrypt(secret_key, context, uri_string):
      keystream_xof.update(siv)
 
      // Calculate padding for base64 encoding alignment
-     // The total bytes (SIV + component) must be a multiple of 3
+     // The total bytes (SIV + component) must be a multiple of PADBS
      // to produce clean base64 output without padding characters
      component_len = len(component)
-     padding_len = (3 - (SIVLEN + component_len) % 3) % 3
+     padding_len = (PADBS - (SIVLEN + component_len) % PADBS) % PADBS
 
      // Generate keystream
      keystream = keystream_xof.squeeze(component_len + padding_len)
@@ -955,7 +960,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      component_data = None
      for possible_len in range(1, remaining + 1):
         total_len = SIVLEN + possible_len
-        padding_len = (3 - total_len % 3) % 3
+        padding_len = (PADBS - total_len % PADBS) % PADBS
         if possible_len >= padding_len:
            component_data = input_stream.peek(possible_len)
            break
@@ -971,7 +976,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      padded_plaintext = xor_bytes(encrypted_part, keystream)
 
      // Remove padding bytes added for base64 alignment
-     padding_len = (3 - (SIVLEN + len(encrypted_part)) % 3) % 3
+     padding_len = (PADBS - (SIVLEN + len(encrypted_part)) % PADBS) % PADBS
      component = padded_plaintext[:-padding_len] if padding_len > 0 else padded_plaintext
 
      // Update XOF with plaintext
@@ -1001,7 +1006,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
 ~~~
 function calculate_padding(component_len):
   // Calculate padding needed for base64 encoding alignment
-  // The combined SIV (SIVLEN bytes) + component must be divisible by 3
+  // The combined SIV (SIVLEN bytes) + component must be divisible by PADBS
   // for clean base64 encoding without '=' padding characters
   total_len = SIVLEN + component_len
   return (3 - total_len % 3) % 3
