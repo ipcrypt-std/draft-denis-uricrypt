@@ -9,6 +9,11 @@ This is the working area for the individual Internet-Draft, "Prefix-Preserving E
 * [Individual Draft](https://datatracker.ietf.org/doc/html/draft-denis-uricrypt)
 * [Compare Editor's Copy to Individual Draft](https://ipcrypt-std.github.io/draft-denis-uricrypt/#go.draft-denis-uricrypt.diff)
 
+## Known Implementations
+
+* [zig-uricrypt](https://github.com/jedisct1/zig-uricrypt) an URICrypt implementation in Zig
+* [uricrypt.rs](https://github.com/jedisct1/rust-uricrypt) an URICrypt implementaiton in Rust
+* [uricrypt.js](https://github.com/jedisct1/uricrypt.js) an URICrypt implementation in JavaScript (TypeScript)
 
 ## Contributing
 
