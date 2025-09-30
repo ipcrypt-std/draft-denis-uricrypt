@@ -4,16 +4,16 @@
 
 This is the working area for the individual Internet-Draft, "Prefix-Preserving Encryption for URIs".
 
-* [Editor's Copy](https://jedisct1.github.io/draft-denis-uricrypt/#go.draft-denis-uricrypt.html)
+* [Editor's Copy](https://ipcrypt-std.github.io/draft-denis-uricrypt/#go.draft-denis-uricrypt.html)
 * [Datatracker Page](https://datatracker.ietf.org/doc/draft-denis-uricrypt)
 * [Individual Draft](https://datatracker.ietf.org/doc/html/draft-denis-uricrypt)
-* [Compare Editor's Copy to Individual Draft](https://jedisct1.github.io/draft-denis-uricrypt/#go.draft-denis-uricrypt.diff)
+* [Compare Editor's Copy to Individual Draft](https://ipcrypt-std.github.io/draft-denis-uricrypt/#go.draft-denis-uricrypt.diff)
 
 
 ## Contributing
 
 See the
-[guidelines for contributions](https://github.com/jedisct1/draft-denis-uricrypt/blob/main/CONTRIBUTING.md).
+[guidelines for contributions](https://github.com/ipcrypt-std/draft-denis-uricrypt/blob/main/CONTRIBUTING.md).
 
 The contributing file also has tips on how to make contributions, if you
 don't already know how to do that.
