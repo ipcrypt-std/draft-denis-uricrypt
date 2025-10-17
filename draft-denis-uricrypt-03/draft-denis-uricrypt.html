@@ -1,0 +1,2941 @@
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>Prefix-Preserving Encryption for URIs</title>
+<meta content="Frank Denis" name="author">
+<meta content="
+       This document specifies URICrypt, a deterministic, prefix-preserving
+encryption scheme for Uniform Resource Identifiers (URIs). URICrypt
+encrypts URI paths while preserving their hierarchical structure,
+enabling systems that rely on URI prefix relationships to continue
+functioning with encrypted URIs. The scheme provides authenticated
+encryption for each URI path component, preventing tampering,
+reordering, or mixing of encrypted segments. 
+    " name="description">
+<meta content="xml2rfc 3.30.2" name="generator">
+<meta content="Internet-Draft" name="keyword">
+<meta content="draft-denis-uricrypt-latest" name="ietf.draft">
+<!-- Generator version information:
+  xml2rfc 3.30.2
+    Python 3.12.11
+    ConfigArgParse 1.7
+    google-i18n-address 3.1.1
+    intervaltree 3.1.0
+    Jinja2 3.1.6
+    lxml 5.3.1
+    platformdirs 4.4.0
+    pycountry 24.6.1
+    PyYAML 6.0.2
+    requests 2.32.5
+    setuptools 80.9.0
+    wcwidth 0.2.14
+-->
+<link href="draft-denis-uricrypt.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Lora SemiBold'), local('Lora-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-semibold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-greek.woff2') format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: italic;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-greek.woff2') format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Sofia Sans Semi Condensed';
+  font-style: normal;
+  font-weight: 1 1000;
+  src: url('https://martinthomson.github.io/rfc-css/fonts/sofiasanssemicondensed-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  color-scheme: light dark;
+  --background-color: #fff;
+  --text-color: #222;
+  --title-color: #191919;
+  --link-color: #2a6496;
+  --highlight-color: #f9f9f9;
+  --line-color: #eee;
+  --pilcrow-weak: #ddd;
+  --pilcrow-strong: #bbb;
+  --small-font-size: 14.5px;
+  --font-mono: 'Oxygen Mono', monospace;
+  --font-title: "Sofia Sans Semi Condensed", sans-serif;
+  scrollbar-color: #bbb #eee;
+}
+body {
+  max-width: 600px;
+  margin: 75px auto;
+  padding: 0 5px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  font: 16px/22px "Lora", serif;
+  scroll-behavior: smooth;
+}
+
+.ears {
+  display: none;
+}
+
+/* headings */
+section {
+  clear: both;
+}
+.section-number {
+  padding-right: 0.5em;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-title);
+  font-weight: 680;
+  margin: 0.8em 0 0.3em;
+  font-size-adjust: 0.5;
+  color: var(--title-color);
+}
+h1#title {
+  font-size: 32px;
+  line-height: 40px;
+  clear: both;
+}
+h1#title, h1#rfcnum {
+  margin: 1.5em 0 0.2em;
+}
+h1#rfcnum + h1#title {
+  margin: 0.2em 0;
+}
+
+h1, h2, h3 {
+  font-size: 22px;
+  line-height: 27px;
+}
+h4, h5, h6 {
+  font-size: 20px;
+  line-height: 24px;
+}
+
+/* general structure */
+.author {
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+#abstract+p {
+  font-size: 18px;
+  line-height: 24px;
+}
+#abstract+p code, #abstract+p samp, #abstract+p tt {
+  font-size: 16px;
+  line-height: 0;
+}
+
+p {
+  padding: 0;
+  margin: 0.5em 0;
+  text-align: left;
+}
+div {
+  margin: 0;
+}
+.alignRight.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignRight.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignRight {
+  margin: 1em 0;
+}
+.alignRight > *:first-child {
+  border: none;
+  margin: 0;
+  float: right;
+  clear: both;
+}
+.alignRight > *:nth-child(2) {
+  clear: both;
+  display: block;
+  border: none;
+}
+svg {
+  display: block;
+}
+/* font-family isn't space-separated, but =~ will have to do */
+svg[font-family~="monospace" i], svg [font-family~="monospace" i] {
+  font-family: var(--font-mono);
+}
+.alignCenter.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignCenter.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignCenter {
+  margin: 1em 0;
+}
+.alignCenter > *:first-child {
+  border: none;
+  /* this isn't optimal, but it's an existence proof.  PrinceXML doesn't
+     support flexbox yet.
+  */
+  display: table;
+  margin: 0 auto;
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 0.5em 2em;
+  & :is(ol, ul) {
+    margin-left: 1em;
+  }
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+  & li {
+    margin-top: 0.5em;
+  }
+}
+:is(ul, ol).compact, .ulCompact, .olCompact {
+  margin: 0 0 0 2em;
+  & li {
+    margin: 0;
+    & :first-child { margin-top: 0; }
+    & :last-child { margin-bottom: 0; }
+  }
+}
+
+/* definition lists */
+dl {
+  clear: left;
+  --indent: 3ch;
+  /* --indent: attr(indent ch); not supported in any browser, but we can dream */
+  &.olPercent {
+    --indent: 5ch;
+    & > dt {
+      min-width: calc(var(--indent) - 2ch);
+    }
+  }
+  &.olPercent > dt {
+    float: none;
+  }
+
+  dl > dd > & {
+    margin-top: 0.5em;
+    margin-bottom: 0;
+  }
+}
+dl:not(.dlNewline) > dt {
+  float: left;
+  margin-right: 2ch;
+  min-width: 8ch;
+}
+dl > dd {
+  margin-bottom: .8em;
+  margin-left: var(--indent) !important; /* stupid element overrides */
+  min-height: 2ex;
+}
+:is(dl.compact, .dlCompact) > dd {
+  margin-bottom: 0;
+  & > :is(:first-child, .break:first-child + *) {
+    margin-top: 0;
+  }
+  & > :is(:last-child) {
+    margin-bottom: 0;
+  }
+}
+:is(dd, span).break {
+  display: none;
+}
+
+/* links */
+a, a[href].selfRef:hover {
+  text-decoration: none;
+}
+a[href] {
+  color: var(--link-color);
+}
+a[href].selfRef, .iref + a[href].internal {
+  color: var(--text-color);
+}
+a[href]:hover {
+  text-decoration: underline;
+}
+a[href].selfRef:hover {
+  background-color: var(--highlight-color);
+}
+a.xref:is(.cite, .auto), :is(#status-of-memo, #copyright) a {
+  white-space: nowrap;
+}
+
+/* Figures */
+tt, code, pre {
+  background-color: var(--highlight-color);
+  font: 14px/22px var(--font-mono);
+}
+tt, code {
+  /* changing the font for inline elements leads to different ascender
+     and descender heights; as we want to retain baseline alignment,
+     remove leading to avoid altering the final height of lines
+     note: this fails if these blocks take an entire line,
+     a different solution would be great */
+  line-height: 0;
+}
+:is(h1, h2, h3, h4, h5, h6) :is(tt, code) {
+  font-size: 84%;
+}
+pre {
+  border: 1px solid var(--line-color);
+  font-size: 13.5px;
+  line-height: 16px;
+  letter-spacing: -0.2px;
+  margin: 5px;
+  padding: 5px;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0.5em 0;
+  padding: 0;
+}
+figure blockquote {
+  margin: 0.8em 0.4em 0.4em;
+}
+figcaption, caption {
+  font-style: italic;
+  margin: 0.5em 1.5em;
+  text-align: left;
+  caption-side: bottom;
+}
+@media screen {
+  /* Auto-collapse boilerplate. */
+  :is(#status-of-memo, #copyright) p {
+    margin: -2px 0;
+    max-height: 0;
+    transition: max-height 2s ease, margin 0.5s ease 0.5s;
+    overflow: hidden;
+  }
+  :is(#status-of-memo, #copyright):hover p,
+  :is(#status-of-memo, #copyright) h2:target ~ p {
+    margin: 0.5em 0;
+    max-height: 500px;
+    overflow: auto;
+  }
+  pre, svg {
+    display: inline-block;
+    /* In the horizontal direction, sometimes people make over-sized figures.
+       Scrollbars for those is therefore necessary: auto adds them as necessary..
+       In the vertical direction, the line-height can combine with the font
+       asender/descender height to produce scrollbars: hidden avoids that. */
+    overflow: auto hidden;
+  }
+  pre {
+    max-width: 100%;
+    width: calc(100% - 22px - 1em);
+  }
+  svg {
+    max-width: calc(100% - 22px - 1em);
+  }
+  figure pre {
+    display: block;
+    width: calc(100% - 25px);
+  }
+  :is(pre, svg) + .pilcrow {
+    display: inline-block;
+    vertical-align: text-bottom;
+    padding-bottom: 8px;
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 0 2em;
+  font-style: italic;
+}
+blockquote {
+  margin: 1em 0;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+
+/* tables */
+table {
+  width: auto;
+  max-width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+}
+table.right {
+  margin-left: auto;
+}
+table.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+table.left {
+  margin-right: auto;
+}
+table .text-left {
+  text-align: left;
+}
+table .text-center {
+  text-align: center;
+}
+table .text-right {
+  text-align: right;
+}
+
+thead, tbody {
+  border: 1px solid var(--line-color);
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 5px 10px;
+}
+th {
+  background-color: var(--line-color);
+}
+:is(tr:nth-child(2n), thead+tbody > tr:nth-child(2n+1)) > td {
+  background-color: var(--background-color);
+}
+:is(tr:nth-child(2n+1), thead+tbody > tr:nth-child(2n)) > td {
+  background-color: var(--highlight-color);
+}
+table caption {
+  margin: 0;
+  padding: 3px 0 3px 1em;
+}
+table p {
+  margin: 0;
+}
+
+/* pilcrow */
+a.pilcrow {
+  margin-left: 3px;
+  opacity: 0.2;
+  user-select: none;
+  &[href] {
+    color: var(--pilcrow-weak);
+    &:hover { text-decoration: none; }
+  }
+}
+@media not print {
+  :hover > a.pilcrow {
+    opacity: 1;
+  }
+  a.pilcrow[href]:hover {
+    color: var(--pilcrow-strong);
+    background-color: transparent;
+  }
+}
+@media print {
+  a.pilcrow {
+    display: none;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid var(--line-color);
+}
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: 600;
+  font-size: var(--small-font-size);
+}
+.role {
+  font-variant: all-small-caps;
+}
+sub, sup {
+  line-height: 1;
+  font-size: 80%;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: var(--small-font-size);
+  line-height: 18px;
+  --identifier-width: 15ch;
+  & dt {
+    width: var(--identifier-width);
+    min-width: var(--identifier-width);
+    clear: left;
+    float: left;
+    text-align: right;
+    margin-right: 1ch;
+  }
+  & dd {
+    margin: 0;
+    margin-left: calc(1em + var(--identifier-width)) !important;
+    min-width: 5em;
+  }
+  & .authors {
+    & .author {
+      display: inline-block;
+      margin-right: 1.5em;
+    }
+    & .org {
+      font-style: italic;
+    }
+  }
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #999;
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+}
+.docInfo .prepared {
+  float: right;
+}
+
+/* table of contents */
+#toc {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+
+  & nav {
+    & ul {
+      margin: 0 0.5em 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    & li {
+      line-height: 1.3em;
+      margin: 2px 0;
+      padding-left: 1.2em;
+      text-indent: -1.2em;
+    }
+  }
+  & a.xref {
+    white-space: normal;
+  }
+}
+
+.references {
+  & > dt {
+    text-align: right;
+    font-weight: bold;
+    min-width: 10ch;
+    margin-right: 1.5ch;
+    &:target::before {
+      content: "⇒";
+      margin: 0 10px 0 -25px;
+    }
+  }
+  & > dd {
+    margin-left: 12ch !important;
+    overflow: visible;
+    & .refInstance {
+      margin-bottom: 0.8em;
+    }
+    & .ascii {
+      margin-bottom: 0.25em;
+    }
+  }
+}
+
+#rfc\.index\.index + ul {
+  margin-left: 0;
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  max-width: 20em;
+  margin: 1em auto 1em 0;
+
+  & .nameRole {
+    font-weight: 700;
+    margin-left: 0;
+  }
+  & .label {
+    margin: 0.5em 0;
+  }
+  & .type {
+    display: none;
+  }
+  & .alternative-contact {
+    margin: 0.5em 0 0.25em 0;
+  }
+  & .non-ascii {
+    margin: 0 0 0 2em;
+  }
+  & div.left {
+    text-align: left;
+  }
+  & div.right {
+    text-align: right;
+  }
+}
+
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+@media (min-width: 500px) {
+  #authors-addresses > section {
+    column-count: 2;
+    column-gap: 20px;
+  }
+  #authors-addresses > section > h2 {
+    column-span: all;
+  }
+  /* hack for break-inside: avoid-column */
+  #authors-addresses address {
+    display: inline-block;
+    break-inside: avoid-column;
+  }
+}
+
+/* Comments */
+.rfcEditorRemove p:first-of-type {
+  font-style: italic;
+}
+.cref {
+  background-color: rgba(249, 232, 105, 0.3);
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+
+@media screen {
+  #toc nav {
+    font-family: var(--font-title);
+    font-weight: 360;
+    & > ul { margin-bottom: 2em; }
+    & ul {
+      margin: 0 0 0 4px;
+      & :is(p, li) {
+        margin: 2px 0;
+      }
+    }
+  }
+  #toc a.toplink {
+    float: right;
+  }
+}
+@media not screen {
+  #toc a.toplink {
+    display: none;
+  }
+}
+
+
+/* TOC layout for smaller screens */
+@media screen and (max-width: 929px) {
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 1px 0 0 0;
+    margin: 0;
+    border-bottom: 1px solid #ccc;
+    opacity: 0.6;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 2px 0 2px 6px;
+    padding-right: 1em;
+    font-size: 18px;
+    line-height: 24px;
+    min-width: 190px;
+    text-align: right;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+    &::before { /* css hamburger */
+      float: right;
+      position: relative;
+      width: 1em;
+      height: 1px;
+      left: -164px;
+      margin: 8px 0 0 0;
+      background: white none repeat scroll 0 0;
+      box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+      content: "";
+    }
+  }
+  #toc nav {
+    display: none;
+    background-color: var(--background-color);
+    padding: 0.5em 1em 1em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    height: calc(100vh - 48px);
+    border-left: 1px solid #ddd;
+  }
+  #toc.active {
+    opacity: 1;
+    & nav { display: block; }
+  }
+  /* Make the collapsed ToC header render white on gray also when it's a link */
+  #toc h2 a,
+  #toc h2 a:is(:link, :focus, :hover),
+  #toc a.toplink,
+  #toc a.toplink:hover {
+    color: white;
+    background-color: #444;
+    text-decoration: none;
+  }
+  #toc a.toplink {
+    margin: 2px 0.5em 0;
+  }
+}
+
+/* TOC layout for wide screens */
+@media screen and (min-width: 930px) {
+  body {
+    padding-right: 360px;
+    padding-right: calc(min(180px + 20%, 500px));
+  }
+  #toc {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    right: calc(50vw - 480px);
+    width: 312px;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 0.25em 1em 1em 0;
+  }
+  #toc nav {
+    display: block;
+    height: calc(90vh - 84px);
+    bottom: 0;
+    padding: 0.5em 0 2em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+  #toc a.toplink {
+    margin: 8px 0.5em 0;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc, #n-introduction {
+    page-break-before: always;
+  }
+  #toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  figure, pre, .vcard {
+    page-break-inside: avoid;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  :is(h2, h3, h4, h5, h6)+*, dd {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+}
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+}
+
+/* Dark mode. */
+@media (prefers-color-scheme: dark) {
+:root {
+  --background-color: #121212;
+  --text-color: #f0f0f0;
+  --title-color: #fff;
+  --link-color: #4da4f0;
+  --highlight-color: #282828;
+  --line-color: #444;
+  --pilcrow-weak: #444;
+  --pilcrow-strong: #666;
+  scrollbar-color: #777 #333;
+}
+}
+
+/* SVG Trick: a prefix match works because only black and white are allowed */
+svg :is([stroke="black"], [stroke^="#000"]) {
+  stroke: var(--text-color);
+}
+svg :is([stroke="white"], [stroke^="#fff"]) {
+  stroke: var(--background-color);
+}
+svg :is([fill="black"], [fill^="#000"], :not([fill])) {
+  fill: var(--text-color);
+}
+svg :is([fill="white"], [fill^="#fff"]) {
+  fill: var(--background-color);
+}
+</style>
+
+</head>
+<body class="xml2rfc">
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">URICrypt</td>
+<td class="right">October 2025</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Denis</td>
+<td class="center">Expires 20 April 2026</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">Network Working Group</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-denis-uricrypt-latest</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2025-10-17" class="published">17 October 2025</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Informational</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2026-04-20">20 April 2026</time></dd>
+<dt class="label-authors">Author:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">F. Denis</div>
+<div class="org">Fastly Inc.</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">Prefix-Preserving Encryption for URIs</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">This document specifies URICrypt, a deterministic, prefix-preserving
+encryption scheme for Uniform Resource Identifiers (URIs). URICrypt
+encrypts URI paths while preserving their hierarchical structure,
+enabling systems that rely on URI prefix relationships to continue
+functioning with encrypted URIs. The scheme provides authenticated
+encryption for each URI path component, preventing tampering,
+reordering, or mixing of encrypted segments.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+</section>
+<section class="note rfcEditorRemove" id="section-note.1">
+      <h2 id="name-discussion-venues">
+<a href="#name-discussion-venues" class="section-name selfRef">Discussion Venues</a>
+      </h2>
+<p id="section-note.1-1">This note is to be removed before publishing as an RFC.<a href="#section-note.1-1" class="pilcrow">¶</a></p>
+<p id="section-note.1-2">Source for this draft and an issue tracker can be found at
+    <span><a href="https://github.com/jedisct1/draft-denis-uricrypt">https://github.com/jedisct1/draft-denis-uricrypt</a></span>.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 20 April 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2025 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1" class="keepWithNext"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.1">
+                <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="auto internal xref">1.1</a>.  <a href="#name-use-cases-and-motivations" class="internal xref">Use Cases and Motivations</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1" class="keepWithNext"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-terminology" class="internal xref">Terminology</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-uri-processing" class="internal xref">URI Processing</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-uri-component-extraction" class="internal xref">URI Component Extraction</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1.2.1">
+                    <p id="section-toc.1-1.3.2.1.2.1.1"><a href="#section-3.1.1" class="auto internal xref">3.1.1</a>.  <a href="#name-full-uris" class="internal xref">Full URIs</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1.2.2">
+                    <p id="section-toc.1-1.3.2.1.2.2.1"><a href="#section-3.1.2" class="auto internal xref">3.1.2</a>.  <a href="#name-path-only-uris" class="internal xref">Path-Only URIs</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2">
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="auto internal xref">3.2</a>.  <a href="#name-component-reconstruction" class="internal xref">Component Reconstruction</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-cryptographic-operations" class="internal xref">Cryptographic Operations</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1">
+                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="auto internal xref">4.1</a>.  <a href="#name-xof-initialization" class="internal xref">XOF Initialization</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.2">
+                <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="auto internal xref">4.2</a>.  <a href="#name-component-encryption" class="internal xref">Component Encryption</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3">
+                <p id="section-toc.1-1.4.2.3.1"><a href="#section-4.3" class="auto internal xref">4.3</a>.  <a href="#name-component-decryption" class="internal xref">Component Decryption</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.1">
+                    <p id="section-toc.1-1.4.2.3.2.1.1"><a href="#section-4.3.1" class="auto internal xref">4.3.1</a>.  <a href="#name-component-boundary-detectio" class="internal xref">Component Boundary Detection</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.4">
+                <p id="section-toc.1-1.4.2.4.1"><a href="#section-4.4" class="auto internal xref">4.4</a>.  <a href="#name-padding-and-encoding" class="internal xref">Padding and Encoding</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-algorithm-specification" class="internal xref">Algorithm Specification</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1">
+                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="auto internal xref">5.1</a>.  <a href="#name-encryption-algorithm" class="internal xref">Encryption Algorithm</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.2">
+                <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="auto internal xref">5.2</a>.  <a href="#name-decryption-algorithm" class="internal xref">Decryption Algorithm</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-implementation-details" class="internal xref">Implementation Details</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.1">
+                <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="auto internal xref">6.1</a>.  <a href="#name-turboshake128-usage" class="internal xref">TurboSHAKE128 Usage</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2">
+                <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="auto internal xref">6.2</a>.  <a href="#name-key-and-context-handling" class="internal xref">Key and Context Handling</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.3">
+                <p id="section-toc.1-1.6.2.3.1"><a href="#section-6.3" class="auto internal xref">6.3</a>.  <a href="#name-error-handling" class="internal xref">Error Handling</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-security-guarantees" class="internal xref">Security Guarantees</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1">
+                <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="auto internal xref">7.1</a>.  <a href="#name-confidentiality" class="internal xref">Confidentiality</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.2">
+                <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="auto internal xref">7.2</a>.  <a href="#name-authenticity-and-integrity" class="internal xref">Authenticity and Integrity</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.3">
+                <p id="section-toc.1-1.7.2.3.1"><a href="#section-7.3" class="auto internal xref">7.3</a>.  <a href="#name-prefix-preserving-property" class="internal xref">Prefix-Preserving Property</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.4">
+                <p id="section-toc.1-1.7.2.4.1"><a href="#section-7.4" class="auto internal xref">7.4</a>.  <a href="#name-domain-separation" class="internal xref">Domain Separation</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.5">
+                <p id="section-toc.1-1.7.2.5.1"><a href="#section-7.5" class="auto internal xref">7.5</a>.  <a href="#name-key-commitment" class="internal xref">Key Commitment</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.6">
+                <p id="section-toc.1-1.7.2.6.1"><a href="#section-7.6" class="auto internal xref">7.6</a>.  <a href="#name-resistance-to-common-attack" class="internal xref">Resistance to Common Attacks</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.7">
+                <p id="section-toc.1-1.7.2.7.1"><a href="#section-7.7" class="auto internal xref">7.7</a>.  <a href="#name-security-bounds" class="internal xref">Security Bounds</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.8">
+                <p id="section-toc.1-1.7.2.8.1"><a href="#section-7.8" class="auto internal xref">7.8</a>.  <a href="#name-limitations-and-trade-offs" class="internal xref">Limitations and Trade-offs</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-8" class="auto internal xref">8</a>.  <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#section-9" class="auto internal xref"></a><a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#section-10" class="auto internal xref"></a><a href="#name-acknowledgments" class="internal xref">Acknowledgments</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
+            <p id="section-toc.1-1.11.1"><a href="#section-11" class="auto internal xref"></a><a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12">
+            <p id="section-toc.1-1.12.1"><a href="#appendix-A" class="auto internal xref">Appendix A</a>.  <a href="#name-pseudocode" class="internal xref">Pseudocode</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.1">
+                <p id="section-toc.1-1.12.2.1.1"><a href="#appendix-A.1" class="auto internal xref">A.1</a>.  <a href="#name-uri-component-extraction-2" class="internal xref">URI Component Extraction</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.2">
+                <p id="section-toc.1-1.12.2.2.1"><a href="#appendix-A.2" class="auto internal xref">A.2</a>.  <a href="#name-xof-initialization-2" class="internal xref">XOF Initialization</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.3">
+                <p id="section-toc.1-1.12.2.3.1"><a href="#appendix-A.3" class="auto internal xref">A.3</a>.  <a href="#name-encryption-algorithm-2" class="internal xref">Encryption Algorithm</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.4">
+                <p id="section-toc.1-1.12.2.4.1"><a href="#appendix-A.4" class="auto internal xref">A.4</a>.  <a href="#name-decryption-algorithm-2" class="internal xref">Decryption Algorithm</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.5">
+                <p id="section-toc.1-1.12.2.5.1"><a href="#appendix-A.5" class="auto internal xref">A.5</a>.  <a href="#name-padding-and-encoding-2" class="internal xref">Padding and Encoding</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13">
+            <p id="section-toc.1-1.13.1"><a href="#appendix-B" class="auto internal xref">Appendix B</a>.  <a href="#name-test-vectors" class="internal xref">Test Vectors</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.1">
+                <p id="section-toc.1-1.13.2.1.1"><a href="#appendix-B.1" class="auto internal xref">B.1</a>.  <a href="#name-test-vector-1-full-uri" class="internal xref">Test Vector 1: Full URI</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.2">
+                <p id="section-toc.1-1.13.2.2.1"><a href="#appendix-B.2" class="auto internal xref">B.2</a>.  <a href="#name-test-vector-2-path-only-uri" class="internal xref">Test Vector 2: Path-Only URI</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.3">
+                <p id="section-toc.1-1.13.2.3.1"><a href="#appendix-B.3" class="auto internal xref">B.3</a>.  <a href="#name-test-vector-3-multi-compone" class="internal xref">Test Vector 3: Multi-Component Path</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.4">
+                <p id="section-toc.1-1.13.2.4.1"><a href="#appendix-B.4" class="auto internal xref">B.4</a>.  <a href="#name-test-vector-4-root-with-sch" class="internal xref">Test Vector 4: Root with Scheme</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.5">
+                <p id="section-toc.1-1.13.2.5.1"><a href="#appendix-B.5" class="auto internal xref">B.5</a>.  <a href="#name-test-vector-5-simple-path" class="internal xref">Test Vector 5: Simple Path</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.6">
+                <p id="section-toc.1-1.13.2.6.1"><a href="#appendix-B.6" class="auto internal xref">B.6</a>.  <a href="#name-test-vector-6-uri-with-quer" class="internal xref">Test Vector 6: URI with Query Parameters</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.7">
+                <p id="section-toc.1-1.13.2.7.1"><a href="#appendix-B.7" class="auto internal xref">B.7</a>.  <a href="#name-test-vector-7-uri-with-frag" class="internal xref">Test Vector 7: URI with Fragment</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.8">
+                <p id="section-toc.1-1.13.2.8.1"><a href="#appendix-B.8" class="auto internal xref">B.8</a>.  <a href="#name-test-vector-8-uri-with-quer" class="internal xref">Test Vector 8: URI with Query and Fragment</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.14">
+            <p id="section-toc.1-1.14.1"><a href="#appendix-C" class="auto internal xref"></a><a href="#name-authors-address" class="internal xref">Author's Address</a></p>
+</li>
+        </ul>
+</nav>
+</section>
+</div>
+<div id="introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-1-1">This document specifies URICrypt, a method for encrypting Uniform
+Resource Identifiers (URIs) while preserving their hierarchical
+structure. The primary motivation is to enable systems that rely on
+URI prefix relationships for routing, filtering, or access control to
+continue functioning with encrypted URIs.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">URICrypt achieves prefix preservation through a chained encryption
+model where the encryption of each URI component depends
+cryptographically on all preceding components. This ensures that URIs
+sharing common prefixes produce ciphertexts that also share common
+encrypted prefixes.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3">The scheme uses an extendable-output function (XOF) as its cryptographic primitive
+and provides authenticated encryption for each component, preventing
+tampering, reordering, or mixing of encrypted segments. URICrypt is a
+reversible encryption scheme: encrypted URIs can be fully decrypted to
+recover the original URIs, but only with possession of the secret key.<a href="#section-1-3" class="pilcrow">¶</a></p>
+<div id="use-cases-and-motivations">
+<section id="section-1.1">
+        <h3 id="name-use-cases-and-motivations">
+<a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-use-cases-and-motivations" class="section-name selfRef">Use Cases and Motivations</a>
+        </h3>
+<p id="section-1.1-1">The main motivations include:<a href="#section-1.1-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-1.1-2.1">
+            <p id="section-1.1-2.1.1">Access Control in CDNs: Content Delivery Networks often use URI
+prefixes for routing and access control. URICrypt allows encryption of
+resource paths while preserving the prefix structure needed for
+CDN operations.<a href="#section-1.1-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-1.1-2.2">
+            <p id="section-1.1-2.2.1">Privacy-Preserving Logging: Systems can log encrypted URIs
+without exposing sensitive path information, while still enabling
+analysis based on URI structure.<a href="#section-1.1-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-1.1-2.3">
+            <p id="section-1.1-2.3.1">Confidential Data Sharing: When sharing links to sensitive
+resources, URICrypt prevents the path structure itself from
+revealing confidential information.<a href="#section-1.1-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-1.1-2.4">
+            <p id="section-1.1-2.4.1">Token-Based Access Systems: Systems that issue time-limited
+access tokens can use URICrypt to obfuscate the underlying
+resource location while maintaining routability.<a href="#section-1.1-2.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-1.1-2.5">
+            <p id="section-1.1-2.5.1">Multi-tenant Systems: In systems where multiple tenants share
+infrastructure, URICrypt can isolate tenant data while allowing
+shared components to be processed efficiently.<a href="#section-1.1-2.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-1.1-2.6">
+            <p id="section-1.1-2.6.1">Privacy-preserving Analytics: URICrypt can complement IPCrypt
+<span>[<a href="#I-D.draft-denis-ipcrypt" class="cite xref">I-D.draft-denis-ipcrypt</a>]</span>. Together, they enable systems to perform
+analytics on encrypted network flows and resource access patterns
+without exposing sensitive information about either the network
+endpoints or the specific resources being accessed.<a href="#section-1.1-2.6.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+</section>
+</div>
+<div id="terminology">
+<section id="section-2">
+      <h2 id="name-terminology">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-terminology" class="section-name selfRef">Terminology</a>
+      </h2>
+<p id="section-2-1">The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”,
+“SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “NOT RECOMMENDED”, “MAY”, and
+“OPTIONAL” in this document are to be interpreted as described in BCP
+14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they appear in all capitals, as
+shown here.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<p id="section-2-2">Throughout this document, the following terms and conventions apply:<a href="#section-2-2" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2-3.1">
+          <p id="section-2-3.1.1">URI: Uniform Resource Identifier as defined in <span>[<a href="#RFC3986" class="cite xref">RFC3986</a>]</span>.<a href="#section-2-3.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-3.2">
+          <p id="section-2-3.2.1">URI Component: A segment of a URI path, terminated by ‘/’, ‘?’, or
+‘#’ characters. For encryption purposes, components include the
+trailing terminator except for the final component.<a href="#section-2-3.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-3.3">
+          <p id="section-2-3.3.1">Scheme: The URI scheme (e.g., “https://”) which is preserved in
+plaintext.<a href="#section-2-3.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-3.4">
+          <p id="section-2-3.4.1">XOF: Extendable-Output Function, a cryptographic function that can
+produce output of arbitrary length.<a href="#section-2-3.4.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-3.5">
+          <p id="section-2-3.5.1">SIV: Synthetic Initialization Vector, a value derived from the
+accumulated state of all previous components, used for
+authentication and as input to keystream generation.<a href="#section-2-3.5.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-3.6">
+          <p id="section-2-3.6.1">SIVLEN: The length of the Synthetic Initialization Vector in bytes,
+defined as 16 bytes (128 bits) for this specification.<a href="#section-2-3.6.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-3.7">
+          <p id="section-2-3.7.1">PADBS: Padding Block Size, the number of bytes to which ciphertext
+components are aligned. Defined as 3 bytes for this specification
+to ensure efficient Base64url encoding without padding characters.<a href="#section-2-3.7.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-3.8">
+          <p id="section-2-3.8.1">Domain Separation: The practice of using distinct inputs to
+cryptographic functions to ensure outputs for different purposes
+are not compatible.<a href="#section-2-3.8.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-3.9">
+          <p id="section-2-3.9.1">Prefix-preserving Encryption: An encryption scheme where, if two
+plaintexts share a common prefix, their corresponding ciphertexts
+also share a common (encrypted) prefix.<a href="#section-2-3.9.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-3.10">
+          <p id="section-2-3.10.1">Chained Encryption: A mode where encryption of each component
+depends cryptographically on all preceding components.<a href="#section-2-3.10.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+</section>
+</div>
+<div id="uri-processing">
+<section id="section-3">
+      <h2 id="name-uri-processing">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-uri-processing" class="section-name selfRef">URI Processing</a>
+      </h2>
+<p id="section-3-1">This section describes how URIs are processed for encryption and
+decryption.<a href="#section-3-1" class="pilcrow">¶</a></p>
+<p id="section-3-2">The overall encryption flow transforms a plaintext URI into an encrypted
+URI while preserving its hierarchical structure:<a href="#section-3-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3-3">
+<pre>
++-------------------------------------------------------------+
+|                         Input URI                           |
+|          "https://example.com/path/to/resource"             |
++-------------------------------------------------------------+
+                              |
+                              v
++-------------------------------------------------------------+
+|                    URI Decomposition                        |
++-------------------------------------------------------------+
+|  Scheme: "https://"                                         |
+|  Components: ["example.com/", "path/", "to/", "resource"]   |
++-------------------------------------------------------------+
+                              |
+                              v
++-------------------------------------------------------------+
+|                 Chained Encryption Process                  |
++-------------------------------------------------------------+
+|  For each component in sequence:                            |
+|    1. Update state with plaintext                           |
+|    2. Generate SIV from accumulated state                   |
+|    3. Derive keystream using SIV                            |
+|    4. Encrypt component with keystream                      |
+|    5. Output: SIV || encrypted_component                    |
++-------------------------------------------------------------+
+                              |
+                              v
++-------------------------------------------------------------+
+|                    Encoding &amp; Assembly                      |
++-------------------------------------------------------------+
+|  1. Concatenate all (SIV || encrypted_component) pairs      |
+|  2. Apply base64url encoding                                |
+|  3. Prepend original scheme                                 |
++-------------------------------------------------------------+
+                              |
+                              v
++-------------------------------------------------------------+
+|                       Encrypted URI                         |
+|          "https://HOGo9vauZ3b3xsPNPQng5apS..."              |
++-------------------------------------------------------------+
+</pre><a href="#section-3-3" class="pilcrow">¶</a>
+</div>
+<div id="uri-component-extraction">
+<section id="section-3.1">
+        <h3 id="name-uri-component-extraction">
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-uri-component-extraction" class="section-name selfRef">URI Component Extraction</a>
+        </h3>
+<p id="section-3.1-1">Before encryption, a URI must be split into its scheme and path
+components. The path is further divided into individual components for
+chained encryption. Components are terminated by ‘/’, ‘?’, or ‘#’
+characters, which allows proper handling of query strings and fragments.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+<div id="full-uris">
+<section id="section-3.1.1">
+          <h4 id="name-full-uris">
+<a href="#section-3.1.1" class="section-number selfRef">3.1.1. </a><a href="#name-full-uris" class="section-name selfRef">Full URIs</a>
+          </h4>
+<p id="section-3.1.1-1">For a full URI including a scheme:<a href="#section-3.1.1-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.1.1-2">
+<pre>
+Input:  "https://example.com/a/b/c"
+
+Components:
+
+- Scheme: "https://"
+- Component 1: "example.com/"
+- Component 2: "a/"
+- Component 3: "b/"
+- Component 4: "c"
+</pre><a href="#section-3.1.1-2" class="pilcrow">¶</a>
+</div>
+<p id="section-3.1.1-3">For a URI with query parameters:<a href="#section-3.1.1-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.1.1-4">
+<pre>
+Input:  "https://example.com/path?foo=bar&amp;baz=qux"
+
+Components:
+
+- Scheme: "https://"
+- Component 1: "example.com/"
+- Component 2: "path?"
+- Component 3: "foo=bar&amp;baz=qux"
+</pre><a href="#section-3.1.1-4" class="pilcrow">¶</a>
+</div>
+<p id="section-3.1.1-5">For a URI with a fragment:<a href="#section-3.1.1-5" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.1.1-6">
+<pre>
+Input:  "https://example.com/path#section"
+
+Components:
+
+- Scheme: "https://"
+- Component 1: "example.com/"
+- Component 2: "path#"
+- Component 3: "section"
+</pre><a href="#section-3.1.1-6" class="pilcrow">¶</a>
+</div>
+<p id="section-3.1.1-7">Note that all components except the last include their trailing terminator
+character (‘/’, ‘?’, or ‘#’). This ensures proper reconstruction during decryption.<a href="#section-3.1.1-7" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="path-only-uris">
+<section id="section-3.1.2">
+          <h4 id="name-path-only-uris">
+<a href="#section-3.1.2" class="section-number selfRef">3.1.2. </a><a href="#name-path-only-uris" class="section-name selfRef">Path-Only URIs</a>
+          </h4>
+<p id="section-3.1.2-1">For absolute paths (URIs starting with ‘/’ but without a scheme), the
+leading ‘/’ is treated as the first component:<a href="#section-3.1.2-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.1.2-2">
+<pre>
+Input:  "/a/b/c"
+
+Components:
+
+- Scheme: "" (empty)
+- Component 1: "/"
+- Component 2: "a/"
+- Component 3: "b/"
+- Component 4: "c"
+</pre><a href="#section-3.1.2-2" class="pilcrow">¶</a>
+</div>
+<p id="section-3.1.2-3">For a path with query parameters:<a href="#section-3.1.2-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.1.2-4">
+<pre>
+Input:  "/path/to/file?param=value"
+
+Components:
+
+- Scheme: "" (empty)
+- Component 1: "/"
+- Component 2: "path/"
+- Component 3: "to/"
+- Component 4: "file?"
+- Component 5: "param=value"
+</pre><a href="#section-3.1.2-4" class="pilcrow">¶</a>
+</div>
+<p id="section-3.1.2-5">The leading ‘/’ is explicitly encrypted as a component to maintain
+consistency and enable proper prefix preservation for absolute paths.<a href="#section-3.1.2-5" class="pilcrow">¶</a></p>
+<p id="section-3.1.2-6">This character receives its own SIV and is encrypted, ensuring that the
+root path is authenticated like any other path component and that
+different keys and contexts produce different ciphertexts for that path,
+consistently with other paths.<a href="#section-3.1.2-6" class="pilcrow">¶</a></p>
+<p id="section-3.1.2-7">In applications where all paths are guaranteed to be absolute and the <code>'/'</code> path
+can be considered a special case, ciphertext expansion can be reduced by
+removing the leading <code>'/'</code> character from the URI prior to encryption,
+treating the path as relative with <code>'/'</code> as implicit.<a href="#section-3.1.2-7" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="component-reconstruction">
+<section id="section-3.2">
+        <h3 id="name-component-reconstruction">
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-component-reconstruction" class="section-name selfRef">Component Reconstruction</a>
+        </h3>
+<p id="section-3.2-1">During decryption, components are joined to reconstruct the original
+path:<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.2-2">
+<pre>
+Components: ["example.com/", "a/", "b/", "c"]
+Reconstructed Path: "example.com/a/b/c"
+
+When combined with the scheme: "https://example.com/a/b/c"
+</pre><a href="#section-3.2-2" class="pilcrow">¶</a>
+</div>
+<p id="section-3.2-3">For absolute paths without a scheme:<a href="#section-3.2-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-3.2-4">
+<pre>
+Components: ["/", "a/", "b/", "c"]
+Reconstructed Path: "/a/b/c"
+</pre><a href="#section-3.2-4" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="cryptographic-operations">
+<section id="section-4">
+      <h2 id="name-cryptographic-operations">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-cryptographic-operations" class="section-name selfRef">Cryptographic Operations</a>
+      </h2>
+<p id="section-4-1">The chained encryption model creates cryptographic dependencies between components, ensuring prefix preservation.<a href="#section-4-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4-2">
+<pre>
+  URI: "https://example.com/path/to/resource"
+
+  +-------------------+
+  |   Component 1:    |
+  |  "example.com/"   |
+  +-------------------+
+            |
+            | Plaintext absorbed into components_xof
+            v
+  +-------------------+
+  | SIV1 generation   |------&gt; SIV1 (SIVLEN bytes)
+  +-------------------+         |
+                                |
+                                v
+                      Encrypt("example.com/")
+                                |
+                                v
+                      Output1 = SIV1 || Ciphertext1
+            |
+            | State carries forward
+            v
+  +-------------------+
+  |   Component 2:    |
+  |     "path/"       |
+  +-------------------+
+            |
+            | Plaintext absorbed (includes Component 1 state)
+            v
+  +-------------------+
+  | SIV2 generation   |------&gt; SIV2 (depends on 1)
+  +-------------------+         |
+                                |
+                                v
+                      Encrypt("path/")
+                                |
+                                v
+                      Output2 = SIV2 || Ciphertext2
+            |
+            | State carries forward
+            v
+  +-------------------+
+  |   Component 3:    |
+  |      "to/"        |
+  +-------------------+
+            |
+            | Plaintext absorbed (includes 1 + 2 state)
+            v
+  +-------------------+
+  | SIV3 generation   |------&gt; SIV3 (depends on 1, 2)
+  +-------------------+         |
+                                |
+                                v
+                      Encrypt("to/")
+                                |
+                                v
+                      Output3 = SIV3 || Ciphertext3
+            |
+            | State carries forward
+            v
+  +-------------------+
+  |   Component 4:    |
+  |    "resource"     |
+  +-------------------+
+            |
+            | Plaintext absorbed (includes 1 + 2 + 3 state)
+            v
+  +-------------------+
+  | SIV4 generation   |------&gt; SIV4 (depends on 1, 2, 3)
+  +-------------------+         |
+                                |
+                                v
+                      Encrypt("resource")
+                                |
+                                v
+                      Output4 = SIV4 || Ciphertext4
+
+  Final Output: Output1 || Output2 || Output3 || Output4
+</pre><a href="#section-4-2" class="pilcrow">¶</a>
+</div>
+<p id="section-4-3">If URIs share a common prefix <code>example.com/path/</code>, their <code>Output1</code> and <code>Output2</code> will be identical.<a href="#section-4-3" class="pilcrow">¶</a></p>
+<div id="xof-init">
+<section id="section-4.1">
+        <h3 id="name-xof-initialization">
+<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-xof-initialization" class="section-name selfRef">XOF Initialization</a>
+        </h3>
+<p id="section-4.1-1">The base XOF is initialized with the secret key and context
+parameters using length-prefixed encoding to prevent ambiguities.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.1-2">Two XOF instances are derived from the base XOF:<a href="#section-4.1-2" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-4.1-3">
+<li id="section-4.1-3.1">
+            <p id="section-4.1-3.1.1">Components XOF: Updated with each component’s plaintext to
+generate SIVs<a href="#section-4.1-3.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-4.1-3.2">
+            <p id="section-4.1-3.2.1">Base Keystream XOF: Used as the starting point for generating
+keystream for each component<a href="#section-4.1-3.2.1" class="pilcrow">¶</a></p>
+</li>
+        </ol>
+<div class="alignLeft art-text artwork" id="section-4.1-4">
+<pre>
+  Input: len(key) || key || len(context) || context
+
+  +-----------------------------------------------------+
+  | base_xof = TurboSHAKE128(domain_sep=0x1F)           |
+  | base_xof.update(len(secret_key))                    |
+  | base_xof.update(secret_key)                         |
+  | base_xof.update(len(context))                       |
+  | base_xof.update(context)                            |
+  +-----------------------------------------------------+
+                            |
+                            v
+               +------------------------+
+               |   Clone Base State     |
+               +------------------------+
+                            |
+           +----------------+----------------+
+           v                                 v
+  +--------------------+          +--------------------+
+  |  Components XOF    |          | Base Keystream XOF |
+  +--------------------+          +--------------------+
+  |   update("IV")     |          |   update("KS")     |
+  +--------------------+          +--------------------+
+           |                                 |
+           |                                 |
+           v                                 v
+   For SIV Generation              For Keystream Base
+   (Updated with each              (Cloned for each
+    component plaintext)            component's keystream)
+</pre><a href="#section-4.1-4" class="pilcrow">¶</a>
+</div>
+<p id="section-4.1-5">The initialization process is:<a href="#section-4.1-5" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.1-6">
+<pre>
+base_xof = TurboSHAKE128()
+base_xof.update(len(secret_key))
+base_xof.update(secret_key)
+base_xof.update(len(context))
+base_xof.update(context)
+
+components_xof = base_xof.clone()
+components_xof.update("IV")
+
+base_keystream_xof = base_xof.clone()
+base_keystream_xof.update("KS")
+</pre><a href="#section-4.1-6" class="pilcrow">¶</a>
+</div>
+<p id="section-4.1-7">Note on XOF cloning: The <code>.clone()</code> operation creates a new XOF instance with
+an identical internal state, preserving all previously absorbed data. After
+cloning, the original and cloned XOFs can be updated and read from
+independently. This allows the <code>components_xof</code> to maintain a running state
+across all components while <code>base_keystream_xof</code> remains unchanged for creating
+per-component keystreams.<a href="#section-4.1-7" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="component-encryption">
+<section id="section-4.2">
+        <h3 id="name-component-encryption">
+<a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-component-encryption" class="section-name selfRef">Component Encryption</a>
+        </h3>
+<p id="section-4.2-1">For each component, the encryption process follows a precise sequence
+that ensures both confidentiality and authenticity:<a href="#section-4.2-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-4.2-2">
+<li id="section-4.2-2.1">
+            <p id="section-4.2-2.1.1">Update <code>components_xof</code> with the component plaintext<a href="#section-4.2-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-4.2-2.2">
+            <p id="section-4.2-2.2.1">Squeeze the SIV from <code>components_xof</code> (<code>SIVLEN</code> bytes). This requires cloning <code>components_xof</code> before reading, as reading may finalize the XOF.<a href="#section-4.2-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-4.2-2.3">
+            <p id="section-4.2-2.3.1">Create <code>keystream_xof</code> by cloning <code>base_keystream_xof</code> and updating it with SIV<a href="#section-4.2-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-4.2-2.4">
+            <p id="section-4.2-2.4.1">Calculate padding needed for base64 encoding<a href="#section-4.2-2.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-4.2-2.5">
+            <p id="section-4.2-2.5.1">Generate a keystream of length <code>(component_length + padding)</code><a href="#section-4.2-2.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-4.2-2.6">
+            <p id="section-4.2-2.6.1">XOR the padded component with the keystream<a href="#section-4.2-2.6.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-4.2-2.7">
+            <p id="section-4.2-2.7.1">Output SIV concatenated with <code>encrypted_component</code><a href="#section-4.2-2.7.1" class="pilcrow">¶</a></p>
+</li>
+        </ol>
+<p id="section-4.2-3">The padding ensures clean base64url encoding without padding characters. Since
+base64 encoding works with groups of 3 bytes (producing 4 characters), we pad each
+<code>(SIV || encrypted_component)</code> pair to have a length that’s a multiple of PADBS:<a href="#section-4.2-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.2-4">
+<pre>
+total_bytes = SIVLEN (SIV) + component_len
+padding_len = (PADBS - total_bytes % PADBS) % PADBS
+</pre><a href="#section-4.2-4" class="pilcrow">¶</a>
+</div>
+<p id="section-4.2-5">This formula calculates:<a href="#section-4.2-5" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-4.2-6.1">
+            <p id="section-4.2-6.1.1">How many bytes are needed to reach the next multiple of PADBS<a href="#section-4.2-6.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-4.2-6.2">
+            <p id="section-4.2-6.2.1">The outer modulo handles the case where <code>total_bytes</code> is already a multiple of PADBS<a href="#section-4.2-6.2.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-4.2-7">The <code>components_xof</code> maintains state across all components.
+After generating the SIV for component <code>N</code>, the XOF can be updated with component <code>N+1</code>’s
+plaintext. This chaining ensures that each component’s encryption depends on
+all previous components, thus enabling the prefix-preserving property.<a href="#section-4.2-7" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="component-decryption">
+<section id="section-4.3">
+        <h3 id="name-component-decryption">
+<a href="#section-4.3" class="section-number selfRef">4.3. </a><a href="#name-component-decryption" class="section-name selfRef">Component Decryption</a>
+        </h3>
+<p id="section-4.3-1">For each encrypted component, the decryption process is:<a href="#section-4.3-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-4.3-2">
+<li id="section-4.3-2.1">
+            <p id="section-4.3-2.1.1">Read SIV from input (<code>SIVLEN</code> bytes)<a href="#section-4.3-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-4.3-2.2">
+            <p id="section-4.3-2.2.1">Create <code>keystream_xof</code> by cloning <code>base_keystream_xof</code> and updating it with SIV<a href="#section-4.3-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-4.3-2.3">
+            <p id="section-4.3-2.3.1">Decrypt bytes incrementally to determine component boundaries:<a href="#section-4.3-2.3.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-4.3-2.3.2.1">
+                <p id="section-4.3-2.3.2.1.1">Generate keystream bytes one at a time from the XOF<a href="#section-4.3-2.3.2.1.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-4.3-2.3.2.2">
+                <p id="section-4.3-2.3.2.2.1">XOR each encrypted byte with its corresponding keystream byte<a href="#section-4.3-2.3.2.2.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-4.3-2.3.2.3">
+                <p id="section-4.3-2.3.2.3.1">Check each decrypted byte for component terminators (<code>'/'</code>, <code>'?'</code>, <code>'#'</code>)<a href="#section-4.3-2.3.2.3.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-4.3-2.3.2.4">
+                <p id="section-4.3-2.3.2.4.1">When a terminator is found, the component is complete.<a href="#section-4.3-2.3.2.4.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-4.3-2.3.2.5">
+                <p id="section-4.3-2.3.2.5.1">Skip any padding bytes (null bytes) after the component<a href="#section-4.3-2.3.2.5.1" class="pilcrow">¶</a></p>
+</li>
+            </ul>
+</li>
+          <li id="section-4.3-2.4">
+            <p id="section-4.3-2.4.1">Update <code>components_xof</code> with the complete plaintext component (including terminator)<a href="#section-4.3-2.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-4.3-2.5">
+            <p id="section-4.3-2.5.1">Generate the expected SIV from <code>components_xof</code><a href="#section-4.3-2.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-4.3-2.6">
+            <p id="section-4.3-2.6.1">Compare the expected SIV with the received SIV (constant-time)<a href="#section-4.3-2.6.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-4.3-2.7">
+            <p id="section-4.3-2.7.1">If mismatch, return <code>error</code><a href="#section-4.3-2.7.1" class="pilcrow">¶</a></p>
+</li>
+        </ol>
+<div id="component-boundary-detection">
+<section id="section-4.3.1">
+          <h4 id="name-component-boundary-detectio">
+<a href="#section-4.3.1" class="section-number selfRef">4.3.1. </a><a href="#name-component-boundary-detectio" class="section-name selfRef">Component Boundary Detection</a>
+          </h4>
+<p id="section-4.3.1-1">During decryption, component boundaries are discovered dynamically by examining the decrypted plaintext:<a href="#section-4.3.1-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-4.3.1-2.1">
+              <p id="section-4.3.1-2.1.1">Each component (except possibly the last) ends with a terminator character (<code>'/'</code>, <code>'?'</code>, or <code>'#'</code>)<a href="#section-4.3.1-2.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-4.3.1-2.2">
+              <p id="section-4.3.1-2.2.1">When a terminator is encountered, we know the component is complete<a href="#section-4.3.1-2.2.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-4.3.1-2.3">
+              <p id="section-4.3.1-2.3.1">After finding the terminator, we skip padding bytes to align to the next PADBS-byte boundary.<a href="#section-4.3.1-2.3.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-4.3.1-2.4">
+              <p id="section-4.3.1-2.4.1">The padding length can be calculated: <code>padding = (PADBS - ((SIVLEN + bytes_read) % PADBS)) % PADBS</code><a href="#section-4.3.1-2.4.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+<p id="section-4.3.1-3">This approach eliminates the need for explicit length encoding, as the component structure itself provides the necessary boundary information.<a href="#section-4.3.1-3" class="pilcrow">¶</a></p>
+<p id="section-4.3.1-4">Any tampering with the encrypted data will cause the SIV comparison to fail.<a href="#section-4.3.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="padding-and-encoding">
+<section id="section-4.4">
+        <h3 id="name-padding-and-encoding">
+<a href="#section-4.4" class="section-number selfRef">4.4. </a><a href="#name-padding-and-encoding" class="section-name selfRef">Padding and Encoding</a>
+        </h3>
+<p id="section-4.4-1">To enable clean base64url encoding without padding characters (‘=’), each
+encrypted component pair <code>(SIV || ciphertext)</code> is padded to be a multiple of PADBS bytes.
+This is necessary because base64 encoding processes 3 bytes at a time to produce
+4 characters of output.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
+<p id="section-4.4-2">The padding calculation <code>(PADBS - (SIVLEN + component_len) % PADBS) % PADBS</code> ensures the following:<a href="#section-4.4-2" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-4.4-3.1">
+            <p id="section-4.4-3.1.1">If <code>(SIVLEN + component_len) % PADBS = 0</code>: no padding needed (already aligned)<a href="#section-4.4-3.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-4.4-3.2">
+            <p id="section-4.4-3.2.1">If <code>(SIVLEN + component_len) % PADBS = 1</code>: add 2 bytes of padding<a href="#section-4.4-3.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-4.4-3.3">
+            <p id="section-4.4-3.3.1">If <code>(SIVLEN + component_len) % PADBS = 2</code>: add 1 byte of padding<a href="#section-4.4-3.3.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-4.4-4">With the default value of <code>PADBS=3</code>, this padding scheme provides partial length-hiding.
+For example, with <code>SIVLEN=16</code>, components “abc”, “abcd”, and “abcde” all produce 21-byte
+outputs after padding. Without the secret key, a passive adversary cannot determine
+the exact original component size.<a href="#section-4.4-4" class="pilcrow">¶</a></p>
+<p id="section-4.4-5">The final output is encoded using URL-safe base64 <span>[<a href="#RFC4648" class="cite xref">RFC4648</a>]</span>, with ‘-‘ replacing
+‘+’ and ‘_’ replacing ‘/’ for URI compatibility.<a href="#section-4.4-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="algorithm-specification">
+<section id="section-5">
+      <h2 id="name-algorithm-specification">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-algorithm-specification" class="section-name selfRef">Algorithm Specification</a>
+      </h2>
+<p id="section-5-1">This section provides the complete algorithms for encryption and
+decryption. The following functions and operations are used throughout
+the algorithms:<a href="#section-5-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5-2.1">
+          <p id="section-5-2.1.1"><code>TurboSHAKE128()</code>: Creates a new TurboSHAKE128 XOF instance with domain separation parameter 0x1F. This function produces an extensible output function (XOF) that can generate arbitrary-length outputs.<a href="#section-5-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.2">
+          <p id="section-5-2.2.1"><code>.update(data)</code>: Absorbs the provided data into the XOF state. Data is processed sequentially and updates the internal state of the XOF.<a href="#section-5-2.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.3">
+          <p id="section-5-2.3.1"><code>.read(length)</code>: Squeezes the specified number of bytes from the XOF’s output. Each call continues from where the previous read left off, producing a continuous stream of pseudorandom bytes.<a href="#section-5-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.4">
+          <p id="section-5-2.4.1"><code>.clone()</code>: Creates a new XOF instance with an identical internal state to the original. This enables multiple independent computation paths from the same initial state.<a href="#section-5-2.4.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.5">
+          <p id="section-5-2.5.1">XOR operation: The bitwise exclusive OR operation between two byte sequences of equal length. This operation is used to combine plaintext with keystream for encryption, and ciphertext with keystream for decryption.<a href="#section-5-2.5.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.6">
+          <p id="section-5-2.6.1"><code>base64url_encode(data)</code>: Converts binary data to a base64 string using URL-safe encoding (replacing ‘+’ with ‘-‘ and ‘/’ with ‘_’) and omitting padding characters.<a href="#section-5-2.6.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.7">
+          <p id="section-5-2.7.1"><code>base64url_decode(string)</code>: Converts a URL-safe base64 string back to binary data, automatically handling the absence of padding characters.<a href="#section-5-2.7.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.8">
+          <p id="section-5-2.8.1"><code>Stream(data)</code>: Creates a sequential reader for binary data, enabling byte-by-byte or block-based access to the contents.<a href="#section-5-2.8.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.9">
+          <p id="section-5-2.9.1"><code>constant_time_compare(a, b)</code>: Compares two byte sequences in constant time, regardless of their contents. This prevents timing attacks by ensuring the comparison duration does not depend on which bytes differ.<a href="#section-5-2.9.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.10">
+          <p id="section-5-2.10.1"><code>len(data)</code>: Returns the length of the provided data in bytes.<a href="#section-5-2.10.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.11">
+          <p id="section-5-2.11.1">Concatenation: The operation of joining two byte sequences end-to-end to form a single sequence.<a href="#section-5-2.11.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.12">
+          <p id="section-5-2.12.1"><code>zeros(count)</code>: Generates a sequence of zero-valued bytes of the specified length, used for padding.<a href="#section-5-2.12.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.13">
+          <p id="section-5-2.13.1"><code>remove_padding(data)</code>: Removes trailing zero bytes from a byte sequence to recover the original data length.<a href="#section-5-2.13.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.14">
+          <p id="section-5-2.14.1"><code>join(components)</code>: Combines multiple path components into a single path string, preserving the terminator characters (<code>'/'</code>, <code>'?'</code>, <code>'#'</code>) that are included in each component.<a href="#section-5-2.14.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<div id="encryption-algorithm">
+<section id="section-5.1">
+        <h3 id="name-encryption-algorithm">
+<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-encryption-algorithm" class="section-name selfRef">Encryption Algorithm</a>
+        </h3>
+<p id="section-5.1-1">Input: secret_key, context, uri_string<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+<p id="section-5.1-2">Output: encrypted_uri<a href="#section-5.1-2" class="pilcrow">¶</a></p>
+<p id="section-5.1-3">Steps:<a href="#section-5.1-3" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-5.1-4">
+<li id="section-5.1-4.1">
+            <p id="section-5.1-4.1.1">Split URI into scheme and components<a href="#section-5.1-4.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.1-4.2">
+            <p id="section-5.1-4.2.1">Initialize XOF instances as described in <a href="#xof-init" class="auto internal xref">Section 4.1</a><a href="#section-5.1-4.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.1-4.3">
+            <p id="section-5.1-4.3.1"><code>encrypted_output = empty byte array</code><a href="#section-5.1-4.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.1-4.4">
+            <p id="section-5.1-4.4.1">For each component:<a href="#section-5.1-4.4.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5.1-4.4.2.1">
+                <p id="section-5.1-4.4.2.1.1">Update <code>components_xof</code> with <code>component</code><a href="#section-5.1-4.4.2.1.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.1-4.4.2.2">
+                <p id="section-5.1-4.4.2.2.1"><code>SIV = components_xof.clone().read(SIVLEN)</code><a href="#section-5.1-4.4.2.2.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.1-4.4.2.3">
+                <p id="section-5.1-4.4.2.3.1"><code>keystream_xof = base_keystream_xof.clone()</code><a href="#section-5.1-4.4.2.3.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.1-4.4.2.4">
+                <p id="section-5.1-4.4.2.4.1"><code>keystream_xof.update(SIV)</code><a href="#section-5.1-4.4.2.4.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.1-4.4.2.5">
+                <p id="section-5.1-4.4.2.5.1"><code>padding_len = (PADBS - (SIVLEN + len(component)) % PADBS) % PADBS</code><a href="#section-5.1-4.4.2.5.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.1-4.4.2.6">
+                <p id="section-5.1-4.4.2.6.1"><code>keystream = keystream_xof.read(len(component) + padding_len)</code><a href="#section-5.1-4.4.2.6.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.1-4.4.2.7">
+                <p id="section-5.1-4.4.2.7.1"><code>padded_component = component concatenated with zeros(padding_len)</code><a href="#section-5.1-4.4.2.7.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.1-4.4.2.8">
+                <p id="section-5.1-4.4.2.8.1"><code>encrypted_part = padded_component XOR keystream</code><a href="#section-5.1-4.4.2.8.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.1-4.4.2.9">
+                <p id="section-5.1-4.4.2.9.1"><code>encrypted_output = encrypted_output concatenated with SIV concatenated with encrypted_part</code><a href="#section-5.1-4.4.2.9.1" class="pilcrow">¶</a></p>
+</li>
+            </ul>
+</li>
+          <li id="section-5.1-4.5">
+            <p id="section-5.1-4.5.1"><code>base64_output = base64url_encode(encrypted_output)</code><a href="#section-5.1-4.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.1-4.6">
+            <p id="section-5.1-4.6.1">If scheme is not empty: Return <code>scheme + base64_output</code><a href="#section-5.1-4.6.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.1-4.7">
+            <p id="section-5.1-4.7.1">Else if original URI started with ‘/’: Return <code>'/' + base64_output</code><a href="#section-5.1-4.7.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.1-4.8">
+            <p id="section-5.1-4.8.1">Else: Return <code>base64_output</code><a href="#section-5.1-4.8.1" class="pilcrow">¶</a></p>
+</li>
+        </ol>
+</section>
+</div>
+<div id="decryption-algorithm">
+<section id="section-5.2">
+        <h3 id="name-decryption-algorithm">
+<a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-decryption-algorithm" class="section-name selfRef">Decryption Algorithm</a>
+        </h3>
+<p id="section-5.2-1">Input: secret_key, context, encrypted_uri<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+<p id="section-5.2-2">Output: decrypted_uri or error<a href="#section-5.2-2" class="pilcrow">¶</a></p>
+<p id="section-5.2-3">Note: For path-only URIs (those starting with ‘/’), the output format is:
+- ‘/’ followed by the base64url-encoded encrypted components
+- This preserves the absolute path indicator in the encrypted form<a href="#section-5.2-3" class="pilcrow">¶</a></p>
+<p id="section-5.2-4">Steps:<a href="#section-5.2-4" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-5.2-5">
+<li id="section-5.2-5.1">
+            <p id="section-5.2-5.1.1">Split encrypted URI into scheme and base64 part<a href="#section-5.2-5.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.2-5.2">
+            <p id="section-5.2-5.2.1"><code>decoded = base64url_decode(base64_part)</code> If decoding fails, return <code>error</code><a href="#section-5.2-5.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.2-5.3">
+            <p id="section-5.2-5.3.1">Initialize XOF instances as described in <a href="#xof-init" class="auto internal xref">Section 4.1</a><a href="#section-5.2-5.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.2-5.4">
+            <p id="section-5.2-5.4.1"><code>decrypted_components = empty list</code><a href="#section-5.2-5.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.2-5.5">
+            <p id="section-5.2-5.5.1"><code>position = 0</code><a href="#section-5.2-5.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.2-5.6">
+            <p id="section-5.2-5.6.1">While <code>position &lt; len(decoded)</code>:<a href="#section-5.2-5.6.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5.2-5.6.2.1">
+                <p id="section-5.2-5.6.2.1.1"><code>SIV = decoded[position:position+SIVLEN]</code> If not enough bytes, return <code>error</code><a href="#section-5.2-5.6.2.1.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.2-5.6.2.2">
+                <p id="section-5.2-5.6.2.2.1"><code>keystream_xof = base_keystream_xof.clone()</code><a href="#section-5.2-5.6.2.2.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.2-5.6.2.3">
+                <p id="section-5.2-5.6.2.3.1"><code>keystream_xof.update(SIV)</code><a href="#section-5.2-5.6.2.3.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.2-5.6.2.4">
+                <p id="section-5.2-5.6.2.4.1"><code>component_start = position + SIVLEN</code><a href="#section-5.2-5.6.2.4.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.2-5.6.2.5">
+                <p id="section-5.2-5.6.2.5.1"><code>component = empty byte array</code><a href="#section-5.2-5.6.2.5.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.2-5.6.2.6">
+                <p id="section-5.2-5.6.2.6.1"><code>position = position + SIVLEN</code><a href="#section-5.2-5.6.2.6.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.2-5.6.2.7">
+                <p id="section-5.2-5.6.2.7.1">While <code>position &lt; len(decoded)</code>:<a href="#section-5.2-5.6.2.7.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5.2-5.6.2.7.2.1">
+                    <p id="section-5.2-5.6.2.7.2.1.1"><code>decrypted_byte = decoded[position] XOR keystream_xof.read(1)</code><a href="#section-5.2-5.6.2.7.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                  <li class="normal" id="section-5.2-5.6.2.7.2.2">
+                    <p id="section-5.2-5.6.2.7.2.2.1"><code>position = position + 1</code><a href="#section-5.2-5.6.2.7.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                  <li class="normal" id="section-5.2-5.6.2.7.2.3">
+                    <p id="section-5.2-5.6.2.7.2.3.1">If <code>decrypted_byte == 0x00</code>: continue (skip padding)<a href="#section-5.2-5.6.2.7.2.3.1" class="pilcrow">¶</a></p>
+</li>
+                  <li class="normal" id="section-5.2-5.6.2.7.2.4">
+                    <p id="section-5.2-5.6.2.7.2.4.1"><code>component.append(decrypted_byte)</code><a href="#section-5.2-5.6.2.7.2.4.1" class="pilcrow">¶</a></p>
+</li>
+                  <li class="normal" id="section-5.2-5.6.2.7.2.5">
+                    <p id="section-5.2-5.6.2.7.2.5.1">If <code>decrypted_byte</code> is <code>'/'</code>, <code>'?'</code>, or <code>'#'</code>:<a href="#section-5.2-5.6.2.7.2.5.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5.2-5.6.2.7.2.5.2.1">
+                        <p id="section-5.2-5.6.2.7.2.5.2.1.1"><code>total_len = position - component_start</code><a href="#section-5.2-5.6.2.7.2.5.2.1.1" class="pilcrow">¶</a></p>
+</li>
+                      <li class="normal" id="section-5.2-5.6.2.7.2.5.2.2">
+                        <p id="section-5.2-5.6.2.7.2.5.2.2.1"><code>position = position + ((PADBS - ((SIVLEN + total_len) % PADBS)) % PADBS)</code><a href="#section-5.2-5.6.2.7.2.5.2.2.1" class="pilcrow">¶</a></p>
+</li>
+                      <li class="normal" id="section-5.2-5.6.2.7.2.5.2.3">
+                        <p id="section-5.2-5.6.2.7.2.5.2.3.1">Break inner loop<a href="#section-5.2-5.6.2.7.2.5.2.3.1" class="pilcrow">¶</a></p>
+</li>
+                    </ul>
+</li>
+                </ul>
+</li>
+              <li class="normal" id="section-5.2-5.6.2.8">
+                <p id="section-5.2-5.6.2.8.1">Update <code>components_xof</code> with <code>component</code><a href="#section-5.2-5.6.2.8.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.2-5.6.2.9">
+                <p id="section-5.2-5.6.2.9.1"><code>expected_SIV = components_xof.clone().read(SIVLEN)</code><a href="#section-5.2-5.6.2.9.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.2-5.6.2.10">
+                <p id="section-5.2-5.6.2.10.1">If <code>constant_time_compare(SIV, expected_SIV) == false</code>, return <code>error</code><a href="#section-5.2-5.6.2.10.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.2-5.6.2.11">
+                <p id="section-5.2-5.6.2.11.1"><code>decrypted_components.append(component)</code><a href="#section-5.2-5.6.2.11.1" class="pilcrow">¶</a></p>
+</li>
+            </ul>
+</li>
+          <li id="section-5.2-5.7">
+            <p id="section-5.2-5.7.1"><code>decrypted_path = join(decrypted_components)</code><a href="#section-5.2-5.7.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-5.2-5.8">
+            <p id="section-5.2-5.8.1">Return <code>scheme + decrypted_path</code><a href="#section-5.2-5.8.1" class="pilcrow">¶</a></p>
+</li>
+        </ol>
+</section>
+</div>
+</section>
+</div>
+<div id="implementation-details">
+<section id="section-6">
+      <h2 id="name-implementation-details">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-implementation-details" class="section-name selfRef">Implementation Details</a>
+      </h2>
+<div id="turboshake128-usage">
+<section id="section-6.1">
+        <h3 id="name-turboshake128-usage">
+<a href="#section-6.1" class="section-number selfRef">6.1. </a><a href="#name-turboshake128-usage" class="section-name selfRef">TurboSHAKE128 Usage</a>
+        </h3>
+<p id="section-6.1-1">Implementations MUST use TurboSHAKE128 with a domain separation
+parameter of <code>0x1F</code> for all operations. The TurboSHAKE128 XOF is used
+for:<a href="#section-6.1-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-6.1-2.1">
+            <p id="section-6.1-2.1.1">Generating SIVs from the components XOF<a href="#section-6.1-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-6.1-2.2">
+            <p id="section-6.1-2.2.1">Generating keystream for encryption/decryption<a href="#section-6.1-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-6.1-2.3">
+            <p id="section-6.1-2.3.1">All XOF operations in the initialization<a href="#section-6.1-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-6.1-3">TurboSHAKE128 is specified in <span>[<a href="#RFC9861" class="cite xref">RFC9861</a>]</span> and provides the security
+properties needed for this construction.<a href="#section-6.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="key-and-context-handling">
+<section id="section-6.2">
+        <h3 id="name-key-and-context-handling">
+<a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-key-and-context-handling" class="section-name selfRef">Key and Context Handling</a>
+        </h3>
+<p id="section-6.2-1">The secret key MUST be at least <code>SIVLEN</code> bytes long. Keys shorter than <code>SIVLEN</code>
+bytes MUST be rejected. Implementations SHOULD validate that the key
+does not consist of repeated patterns (e.g., identical first and
+second halves) as a best practice.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
+<p id="section-6.2-2">The context parameter is a string that provides domain separation.
+Different applications SHOULD use different context strings to prevent
+cross-application attacks. The context string MAY be empty.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
+<p id="section-6.2-3">Both key and context are length-prefixed when absorbed into the base
+XOF:<a href="#section-6.2-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-6.2-4">
+<pre>
+base_xof.update(len(secret_key) as uint8)
+base_xof.update(secret_key)
+base_xof.update(len(context) as uint8)
+base_xof.update(context)
+</pre><a href="#section-6.2-4" class="pilcrow">¶</a>
+</div>
+<p id="section-6.2-5">The length is encoded as a single byte, limiting keys and contexts to
+255 bytes. This is sufficient for all practical use cases.<a href="#section-6.2-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="error-handling">
+<section id="section-6.3">
+        <h3 id="name-error-handling">
+<a href="#section-6.3" class="section-number selfRef">6.3. </a><a href="#name-error-handling" class="section-name selfRef">Error Handling</a>
+        </h3>
+<p id="section-6.3-1">Implementations MUST NOT reveal the cause of decryption failures. All
+error conditions (invalid base64, incorrect padding, SIV mismatch,
+insufficient data) MUST result in identical, generic error messages.<a href="#section-6.3-1" class="pilcrow">¶</a></p>
+<p id="section-6.3-2">SIV comparison MUST be performed in constant-time to prevent timing
+attacks.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="security-guarantees">
+<section id="section-7">
+      <h2 id="name-security-guarantees">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-security-guarantees" class="section-name selfRef">Security Guarantees</a>
+      </h2>
+<p id="section-7-1">URICrypt provides the following cryptographic security guarantees:<a href="#section-7-1" class="pilcrow">¶</a></p>
+<div id="confidentiality">
+<section id="section-7.1">
+        <h3 id="name-confidentiality">
+<a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-confidentiality" class="section-name selfRef">Confidentiality</a>
+        </h3>
+<p id="section-7.1-1">URICrypt achieves semantic security for URI path components through its use of TurboSHAKE128 as a pseudorandom function. Each component is encrypted using a unique keystream derived from the following:<a href="#section-7.1-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-7.1-2.1">
+            <p id="section-7.1-2.1.1">The secret key<a href="#section-7.1-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.1-2.2">
+            <p id="section-7.1-2.2.1">The application context<a href="#section-7.1-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.1-2.3">
+            <p id="section-7.1-2.3.1">A synthetic initialization vector (SIV) that depends on all preceding components<a href="#section-7.1-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-7.1-3">This construction ensures that:<a href="#section-7.1-3" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-7.1-4.1">
+            <p id="section-7.1-4.1.1">An attacker without the secret key cannot recover plaintext components from ciphertexts.<a href="#section-7.1-4.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.1-4.2">
+            <p id="section-7.1-4.2.1">The keystream generation is computationally indistinguishable from random for each unique (key, context, path-prefix) tuple.<a href="#section-7.1-4.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.1-4.3">
+            <p id="section-7.1-4.3.1">Components are protected by at least 128 bits of security against brute-force attacks.<a href="#section-7.1-4.3.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="authenticity-and-integrity">
+<section id="section-7.2">
+        <h3 id="name-authenticity-and-integrity">
+<a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-authenticity-and-integrity" class="section-name selfRef">Authenticity and Integrity</a>
+        </h3>
+<p id="section-7.2-1">Each URI component is authenticated through the SIV mechanism:<a href="#section-7.2-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-7.2-2.1">
+            <p id="section-7.2-2.1.1">The SIV acts as a Message Authentication Code (MAC) computed over the component and all preceding components.<a href="#section-7.2-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.2-2.2">
+            <p id="section-7.2-2.2.1">Any modification to a component will cause the SIV verification to fail during decryption.<a href="#section-7.2-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.2-2.3">
+            <p id="section-7.2-2.3.1">The chained construction ensures that reordering, insertion, or deletion of components is detected.<a href="#section-7.2-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.2-2.4">
+            <p id="section-7.2-2.4.1">Authentication provides 128-bit security against forgery attempts.<a href="#section-7.2-2.4.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="prefix-preserving-property">
+<section id="section-7.3">
+        <h3 id="name-prefix-preserving-property">
+<a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-prefix-preserving-property" class="section-name selfRef">Prefix-Preserving Property</a>
+        </h3>
+<p id="section-7.3-1">URICrypt maintains a controlled information leakage pattern:<a href="#section-7.3-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-7.3-2.1">
+            <p id="section-7.3-2.1.1">URIs sharing a common prefix will produce ciphertexts with the same encrypted prefix.<a href="#section-7.3-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.3-2.2">
+            <p id="section-7.3-2.2.1">This property is deterministic and intentional, enabling systems to perform prefix-based operations.<a href="#section-7.3-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.3-2.3">
+            <p id="section-7.3-2.3.1">The leakage is limited to prefix structure only—no information about non-matching suffixes is revealed.<a href="#section-7.3-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="domain-separation">
+<section id="section-7.4">
+        <h3 id="name-domain-separation">
+<a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-domain-separation" class="section-name selfRef">Domain Separation</a>
+        </h3>
+<p id="section-7.4-1">The context parameter provides cryptographic domain separation:<a href="#section-7.4-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-7.4-2.1">
+            <p id="section-7.4-2.1.1">Different contexts with the same key produce completely independent ciphertexts.<a href="#section-7.4-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.4-2.2">
+            <p id="section-7.4-2.2.1">This prevents cross-context attacks where ciphertexts from one application could be used in another.<a href="#section-7.4-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.4-2.3">
+            <p id="section-7.4-2.3.1">Context binding is cryptographically enforced through the XOF initialization.<a href="#section-7.4-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="key-commitment">
+<section id="section-7.5">
+        <h3 id="name-key-commitment">
+<a href="#section-7.5" class="section-number selfRef">7.5. </a><a href="#name-key-commitment" class="section-name selfRef">Key Commitment</a>
+        </h3>
+<p id="section-7.5-1">URICrypt provides full key-commitment security.<a href="#section-7.5-1" class="pilcrow">¶</a></p>
+<p id="section-7.5-2">The scheme is fully key-committing, meaning that a ciphertext can only be decrypted with the exact key that was used to encrypt it. It is computationally infeasible to find two different keys that successfully decrypt the same ciphertext to valid plaintexts.<a href="#section-7.5-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="resistance-to-common-attacks">
+<section id="section-7.6">
+        <h3 id="name-resistance-to-common-attack">
+<a href="#section-7.6" class="section-number selfRef">7.6. </a><a href="#name-resistance-to-common-attack" class="section-name selfRef">Resistance to Common Attacks</a>
+        </h3>
+<p id="section-7.6-1">URICrypt resists several categories of attacks:<a href="#section-7.6-1" class="pilcrow">¶</a></p>
+<p id="section-7.6-2">Chosen-plaintext Attacks (CPA): While deterministic, URICrypt is CPA-secure for unique inputs. The determinism is a design requirement for prefix preservation.<a href="#section-7.6-2" class="pilcrow">¶</a></p>
+<p id="section-7.6-3">Tampering Detection: Any bit flip, truncation, or modification in the ciphertext will be detected with overwhelming probability (1 - 2<sup>-128</sup>).<a href="#section-7.6-3" class="pilcrow">¶</a></p>
+<p id="section-7.6-4">Length-extension Attacks: The use of length-prefixed encoding and domain separation prevents length-extension attacks.<a href="#section-7.6-4" class="pilcrow">¶</a></p>
+<p id="section-7.6-5">Replay Attacks: Within a single (key, context) pair, replay is possible due to determinism. Applications requiring replay protection should incorporate timestamps or nonces into the context.<a href="#section-7.6-5" class="pilcrow">¶</a></p>
+<p id="section-7.6-6">Key Recovery: TurboSHAKE128’s security properties ensure that observing ciphertexts does not leak information about the secret key.<a href="#section-7.6-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="security-bounds">
+<section id="section-7.7">
+        <h3 id="name-security-bounds">
+<a href="#section-7.7" class="section-number selfRef">7.7. </a><a href="#name-security-bounds" class="section-name selfRef">Security Bounds</a>
+        </h3>
+<p id="section-7.7-1">The security of URICrypt is bounded by the following:<a href="#section-7.7-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-7.7-2.1">
+            <p id="section-7.7-2.1.1">Key strength: Minimum 128-bit security with <code>SIVLEN</code>-byte keys<a href="#section-7.7-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.7-2.2">
+            <p id="section-7.7-2.2.1">Collision resistance: 2<sup>64</sup> birthday bound for SIV collisions<a href="#section-7.7-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.7-2.3">
+            <p id="section-7.7-2.3.1">Authentication security: 2<sup>-128</sup> probability of successful forgery<a href="#section-7.7-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.7-2.4">
+            <p id="section-7.7-2.4.1">Computational security: Based on TurboSHAKE128’s proven security as an XOF<a href="#section-7.7-2.4.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="limitations-and-trade-offs">
+<section id="section-7.8">
+        <h3 id="name-limitations-and-trade-offs">
+<a href="#section-7.8" class="section-number selfRef">7.8. </a><a href="#name-limitations-and-trade-offs" class="section-name selfRef">Limitations and Trade-offs</a>
+        </h3>
+<p id="section-7.8-1">URICrypt makes specific security trade-offs for functionality, including the following:<a href="#section-7.8-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-7.8-2.1">
+            <p id="section-7.8-2.1.1">Deterministic encryption: Same inputs produce same outputs, enabling certain traffic analysis<a href="#section-7.8-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.8-2.2">
+            <p id="section-7.8-2.2.1">Partial length obfuscation: With <code>PADBS=3</code>, exact component lengths are partially hidden<a href="#section-7.8-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.8-2.3">
+            <p id="section-7.8-2.3.1">Prefix structure leakage: The hierarchical structure of URIs is preserved by design<a href="#section-7.8-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.8-2.4">
+            <p id="section-7.8-2.4.1">SIV length configuration: Implementations MAY adjust <code>SIVLEN</code> for different usage bounds. Larger values (24 or 32 bytes) increase birthday bound resistance at the cost of ciphertext expansion. However, 16 bytes is generally recommended as it provides practical collision resistance with acceptable overhead<a href="#section-7.8-2.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.8-2.5">
+            <p id="section-7.8-2.5.1">Padding block size configuration: The default <code>PADBS=3</code> already provides partial length-hiding. Implementations MAY adjust <code>PADBS</code> to increase size obfuscation. Larger values create larger size buckets but increase ciphertext expansion. The value MUST remain a multiple of 3 to ensure efficient Base64url encoding without padding characters<a href="#section-7.8-2.5.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-7.8-3">These trade-offs are intentional and necessary for the prefix-preserving functionality. Applications requiring stronger privacy guarantees should evaluate whether URICrypt’s properties align with their threat model.<a href="#section-7.8-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="security-considerations">
+<section id="section-8">
+      <h2 id="name-security-considerations">
+<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      </h2>
+<p id="section-8-1">URICrypt provides confidentiality and integrity for URI paths while
+preserving prefix relationships. The encryption is fully reversible:
+encrypted URIs can be decrypted to recover the original plaintext URIs,
+but only with knowledge of the secret key. The security properties depend on:<a href="#section-8-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-8-2.1">
+          <p id="section-8-2.1.1">Key Secrecy: The security of URICrypt depends entirely on the
+secrecy of the secret key. Keys MUST be generated using a
+cryptographically secure random number generator <span>[<a href="#RFC4086" class="cite xref">RFC4086</a>]</span> and
+stored securely.<a href="#section-8-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-8-2.2">
+          <p id="section-8-2.2.1">Deterministic Encryption: URICrypt is deterministic - identical
+inputs produce identical outputs. This allows observers to detect
+when the same URI is encrypted multiple times. Applications
+requiring unlinkability SHOULD incorporate additional entropy (e.g.,
+via the context parameter).<a href="#section-8-2.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-8-2.3">
+          <p id="section-8-2.3.1">Prefix Preservation: While essential for functionality, prefix
+preservation leaks information about URI structure. Systems where
+this information is sensitive SHOULD consider alternative
+approaches.<a href="#section-8-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-8-2.4">
+          <p id="section-8-2.4.1">Context Separation: The context parameter prevents cross-context
+attacks. Applications MUST use distinct contexts for different
+purposes, even when sharing keys.<a href="#section-8-2.4.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-8-2.5">
+          <p id="section-8-2.5.1">Component Authentication: Each component is authenticated via
+the SIV mechanism. Any modification, reordering, or truncation of
+components will be detected during decryption.<a href="#section-8-2.5.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-8-2.6">
+          <p id="section-8-2.6.1">Length Obfuscation: The default <code>PADBS=3</code> configuration provides partial
+length-hiding. Applications requiring stronger length-hiding
+SHOULD consider using larger <code>PADBS</code> values or padding components to fixed lengths.<a href="#section-8-2.6.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-8-2.7">
+          <p id="section-8-2.7.1">Key Reuse: Using the same key with different contexts is safe, but
+using the same (key, context) pair for different applications is
+NOT RECOMMENDED.<a href="#section-8-2.7.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+</section>
+</div>
+<div id="iana-considerations">
+<section id="section-9">
+      <h2 id="name-iana-considerations">
+<a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-9-1">This document has no actions for IANA.<a href="#section-9-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="acknowledgments">
+<section id="section-10">
+      <h2 id="name-acknowledgments">
+<a href="#name-acknowledgments" class="section-name selfRef">Acknowledgments</a>
+      </h2>
+<p id="section-10-1">The author would like to thank Maciej Soltysiak for highlighting the importance of properly supporting query parameters and fragments in URI encryption.<a href="#section-10-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="sec-normative-references">
+<section id="section-11">
+      <h2 id="name-normative-references">
+<a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+      </h2>
+<dl class="references">
+<dt id="I-D.draft-denis-ipcrypt">[I-D.draft-denis-ipcrypt]</dt>
+      <dd>
+<span class="refAuthor">Denis, F.</span>, <span class="refTitle">"Methods for IP Address Encryption and Obfuscation"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-denis-ipcrypt-12</span>, <time datetime="2025-09-19" class="refDate">19 September 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-denis-ipcrypt-12">https://datatracker.ietf.org/doc/html/draft-denis-ipcrypt-12</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC2119">[RFC2119]</dt>
+      <dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC3986">[RFC3986]</dt>
+      <dd>
+<span class="refAuthor">Berners-Lee, T.</span>, <span class="refAuthor">Fielding, R.</span>, and <span class="refAuthor">L. Masinter</span>, <span class="refTitle">"Uniform Resource Identifier (URI): Generic Syntax"</span>, <span class="seriesInfo">STD 66</span>, <span class="seriesInfo">RFC 3986</span>, <span class="seriesInfo">DOI 10.17487/RFC3986</span>, <time datetime="2005-01" class="refDate">January 2005</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc3986">https://www.rfc-editor.org/rfc/rfc3986</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC4086">[RFC4086]</dt>
+      <dd>
+<span class="refAuthor">Eastlake 3rd, D.</span>, <span class="refAuthor">Schiller, J.</span>, and <span class="refAuthor">S. Crocker</span>, <span class="refTitle">"Randomness Requirements for Security"</span>, <span class="seriesInfo">BCP 106</span>, <span class="seriesInfo">RFC 4086</span>, <span class="seriesInfo">DOI 10.17487/RFC4086</span>, <time datetime="2005-06" class="refDate">June 2005</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc4086">https://www.rfc-editor.org/rfc/rfc4086</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC4648">[RFC4648]</dt>
+      <dd>
+<span class="refAuthor">Josefsson, S.</span>, <span class="refTitle">"The Base16, Base32, and Base64 Data Encodings"</span>, <span class="seriesInfo">RFC 4648</span>, <span class="seriesInfo">DOI 10.17487/RFC4648</span>, <time datetime="2006-10" class="refDate">October 2006</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc4648">https://www.rfc-editor.org/rfc/rfc4648</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8174">[RFC8174]</dt>
+      <dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9861">[RFC9861]</dt>
+    <dd>
+<span class="refAuthor">Viguier, B.</span>, <span class="refAuthor">Wong, D., Ed.</span>, <span class="refAuthor">Van Assche, G., Ed.</span>, <span class="refAuthor">Dang, Q., Ed.</span>, and <span class="refAuthor">J. Daemen, Ed.</span>, <span class="refTitle">"KangarooTwelve and TurboSHAKE"</span>, <span class="seriesInfo">RFC 9861</span>, <span class="seriesInfo">DOI 10.17487/RFC9861</span>, <time datetime="2025-10" class="refDate">October 2025</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9861">https://www.rfc-editor.org/rfc/rfc9861</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="pseudocode">
+<section id="appendix-A">
+      <h2 id="name-pseudocode">
+<a href="#appendix-A" class="section-number selfRef">Appendix A. </a><a href="#name-pseudocode" class="section-name selfRef">Pseudocode</a>
+      </h2>
+<div id="uri-component-extraction-1">
+<section id="appendix-A.1">
+        <h3 id="name-uri-component-extraction-2">
+<a href="#appendix-A.1" class="section-number selfRef">A.1. </a><a href="#name-uri-component-extraction-2" class="section-name selfRef">URI Component Extraction</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.1-1">
+<pre>
+function extract_components(uri_string):
+  if uri_string contains "://":
+     scheme = substring up to and including "://"
+     path = substring after "://"
+  else:
+     scheme = ""
+     path = uri_string
+
+  components = []
+
+  // For absolute paths, treat leading "/" as first component
+  if path starts with "/":
+     components.append("/")
+     path = substring after first "/"
+
+  while path is not empty:
+     terminator_pos = find_next_terminator(path)
+     if terminator_pos found:
+        component = substring(path, 0, terminator_pos + 1)
+        path = substring(path, terminator_pos + 1)
+        components.append(component)
+     else:
+        components.append(path)
+        path = ""
+
+  return (scheme, components)
+
+function find_next_terminator(path):
+  for i from 0 to length(path) - 1:
+     if path[i] == '/' or path[i] == '?' or path[i] == '#':
+        return i
+  return not_found
+</pre><a href="#appendix-A.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="xof-initialization">
+<section id="appendix-A.2">
+        <h3 id="name-xof-initialization-2">
+<a href="#appendix-A.2" class="section-number selfRef">A.2. </a><a href="#name-xof-initialization-2" class="section-name selfRef">XOF Initialization</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.2-1">
+<pre>
+function initialize_xofs(secret_key, context):
+  // Initialize base XOF
+  base_xof = TurboSHAKE128(0x1F)
+
+  // Absorb key and context with length prefixes
+  base_xof.update(uint8(len(secret_key)))
+  base_xof.update(secret_key)
+  base_xof.update(uint8(len(context)))
+  base_xof.update(context)
+
+  // Create components XOF
+  components_xof = base_xof.clone()
+  components_xof.update("IV")
+
+  // Create base keystream XOF
+  base_keystream_xof = base_xof.clone()
+  base_keystream_xof.update("KS")
+
+  return (components_xof, base_keystream_xof)
+</pre><a href="#appendix-A.2-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="encryption-algorithm-1">
+<section id="appendix-A.3">
+        <h3 id="name-encryption-algorithm-2">
+<a href="#appendix-A.3" class="section-number selfRef">A.3. </a><a href="#name-encryption-algorithm-2" class="section-name selfRef">Encryption Algorithm</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.3-1">
+<pre>
+function uricrypt_encrypt(secret_key, context, uri_string):
+  // Extract components
+  (scheme, components) = extract_components(uri_string)
+
+  // Initialize XOF instances with secret key and context
+  (components_xof, base_keystream_xof) =
+      initialize_xofs(secret_key, context)
+  if error: return error
+
+  encrypted_output = byte_array()
+
+  // Process each component
+  for component in components:
+     // Update components XOF for SIV computation
+     components_xof.update(component)
+
+     // Generate SIVLEN-byte Synthetic Initialization Vector (SIV)
+     siv = components_xof.clone().squeeze(SIVLEN)
+
+     // Create keystream XOF for this component
+     keystream_xof = base_keystream_xof.clone()
+     keystream_xof.update(siv)
+
+     // Calculate padding for base64 encoding alignment
+     // The total bytes (SIV + component) must be a multiple of PADBS
+     // to produce clean base64 output without padding characters
+     component_len = len(component)
+     padding_len = (PADBS - (SIVLEN + component_len) % PADBS) % PADBS
+
+     // Generate keystream
+     keystream = keystream_xof.squeeze(component_len + padding_len)
+
+     // Pad component to align with base64 encoding requirements
+     padded_component = component + byte_array(padding_len)
+
+     // Encrypt using XOR with keystream
+     encrypted_part = xor_bytes(padded_component, keystream)
+
+     // Append to output
+     encrypted_output.extend(siv)
+     encrypted_output.extend(encrypted_part)
+
+  // Base64 encode with URL-safe characters and no padding
+  base64_output = base64_urlsafe_no_pad_encode(encrypted_output)
+
+  // Return with appropriate prefix
+  if scheme != "":
+     return scheme + base64_output
+  else if uri_string starts with "/":
+     return "/" + base64_output
+  else:
+     return base64_output
+</pre><a href="#appendix-A.3-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="decryption-algorithm-1">
+<section id="appendix-A.4">
+        <h3 id="name-decryption-algorithm-2">
+<a href="#appendix-A.4" class="section-number selfRef">A.4. </a><a href="#name-decryption-algorithm-2" class="section-name selfRef">Decryption Algorithm</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.4-1">
+<pre>
+function uricrypt_decrypt(secret_key, context, encrypted_uri):
+  // Split scheme and base64
+  if encrypted_uri contains "://":
+     scheme = substring up to and including "://"
+     base64_part = substring after "://"
+  else if encrypted_uri starts with "/":
+     // Path-only URI: strip leading "/" before decoding
+     scheme = ""
+     base64_part = substring after first "/"
+  else:
+     scheme = ""
+     base64_part = encrypted_uri
+
+  // Decode base64
+  try:
+     decoded = base64_urlsafe_no_pad_decode(base64_part)
+  catch:
+     return error("Decryption failed")
+
+  // Initialize XOF instances with secret key and context
+  (components_xof, base_keystream_xof) =
+      initialize_xofs(secret_key, context)
+  if error: return error
+
+  decrypted_components = []
+  input_stream = ByteStream(decoded)
+
+  // Process each component
+  while not input_stream.empty():
+     // Read SIV
+     siv = input_stream.read(SIVLEN)
+     if len(siv) != SIVLEN:
+        return error("Decryption failed")
+
+     // Create keystream XOF
+     keystream_xof = base_keystream_xof.clone()
+     keystream_xof.update(siv)
+
+     // Decrypt byte-by-byte to find component boundary
+     component = byte_array()
+     component_start = input_stream.position()
+
+     while not input_stream.empty():
+        // Decrypt one byte
+        encrypted_byte = input_stream.read(1)
+        if len(encrypted_byte) != 1:
+           return error("Decryption failed")
+
+        keystream_byte = keystream_xof.squeeze(1)
+        decrypted_byte = xor_bytes(encrypted_byte, keystream_byte)[0]
+
+        // Skip padding (null bytes)
+        if decrypted_byte == 0x00:
+           continue
+
+        // Add to component
+        component.append(decrypted_byte)
+
+        // Check for terminator
+        if decrypted_byte == '/' or decrypted_byte == '?' or decrypted_byte == '#':
+           // Component complete - skip remaining padding
+           total_len = input_stream.position() - component_start
+           padding_len = (PADBS - ((SIVLEN + total_len) % PADBS)) % PADBS
+           input_stream.skip(padding_len)
+           break
+
+     // Update XOF with plaintext
+     components_xof.update(component)
+
+     // Generate expected SIV
+     expected_siv = components_xof.clone().squeeze(SIVLEN)
+
+     // Authenticate using constant-time comparison to prevent timing attacks
+     if not constant_time_equal(siv, expected_siv):
+        return error("Decryption failed")
+
+     decrypted_components.append(component)
+
+  // Reconstruct URI
+  path = "".join(decrypted_components)
+  return scheme + path
+</pre><a href="#appendix-A.4-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="padding-and-encoding-1">
+<section id="appendix-A.5">
+        <h3 id="name-padding-and-encoding-2">
+<a href="#appendix-A.5" class="section-number selfRef">A.5. </a><a href="#name-padding-and-encoding-2" class="section-name selfRef">Padding and Encoding</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-A.5-1">
+<pre>
+function calculate_padding(component_len):
+  // Calculate padding needed for base64 encoding alignment
+  // The combined SIV (SIVLEN bytes) + component must be divisible by PADBS
+  // for clean base64 encoding without '=' padding characters
+  total_len = SIVLEN + component_len
+  return (PADBS - total_len % PADBS) % PADBS
+
+function base64_urlsafe_no_pad_encode(data):
+  // Use standard base64 encoding
+  encoded = standard_base64_encode(data)
+  // Make URL-safe and remove padding for URI compatibility
+  encoded = encoded.replace('+', '-')
+                   .replace('/', '_')
+                   .rstrip('=')
+  return encoded
+
+function base64_urlsafe_no_pad_decode(encoded):
+  // Add padding if needed for standard decoder
+  padding = (4 - len(encoded) % 4) % 4
+  if padding &gt; 0:
+     encoded = encoded + ('=' * padding)
+  // Make standard base64
+  encoded = encoded.replace('-', '+')
+                   .replace('_', '/')
+  // Decode
+  return standard_base64_decode(encoded)
+</pre><a href="#appendix-A.5-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="test-vectors">
+<section id="appendix-B">
+      <h2 id="name-test-vectors">
+<a href="#appendix-B" class="section-number selfRef">Appendix B. </a><a href="#name-test-vectors" class="section-name selfRef">Test Vectors</a>
+      </h2>
+<p id="appendix-B-1">These test vectors were generated using the reference Rust implementation
+of URICrypt with TurboSHAKE128.<a href="#appendix-B-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="appendix-B-2">
+<pre>
+Test Configuration:
+secret_key (hex): 0102030405060708090a0b0c0d0e0f10
+context: "test-context"
+</pre><a href="#appendix-B-2" class="pilcrow">¶</a>
+</div>
+<div id="test-vector-1-full-uri">
+<section id="appendix-B.1">
+        <h3 id="name-test-vector-1-full-uri">
+<a href="#appendix-B.1" class="section-number selfRef">B.1. </a><a href="#name-test-vector-1-full-uri" class="section-name selfRef">Test Vector 1: Full URI</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-B.1-1">
+<pre>
+Input: "https://example.com/a/b/c"
+Output: "https://HOGo9vauZ3b3xsPNPQng5apSzL5V7QW94C7USgN8mHZJ337AKSWOu
+         cUwMuD-uUfF95SsSHCNgBkXUnH1uGll_YtBltXSqKEHNcYJJwbdFdhfWz19"
+</pre><a href="#appendix-B.1-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="test-vector-2-path-only-uri">
+<section id="appendix-B.2">
+        <h3 id="name-test-vector-2-path-only-uri">
+<a href="#appendix-B.2" class="section-number selfRef">B.2. </a><a href="#name-test-vector-2-path-only-uri" class="section-name selfRef">Test Vector 2: Path-Only URI</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-B.2-1">
+<pre>
+Input: "/a/b/c"
+Output: "/b9bCOhqZsvU9XxGOMk6d8QFQhTIdI_xYKpds2lWXpZCms5-az9wtfUft3rec
+         3d9YkUo0N7VcxO5MXfxE5UobvgTJX8UpRdNN"
+</pre><a href="#appendix-B.2-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="test-vector-3-multi-component-path">
+<section id="appendix-B.3">
+        <h3 id="name-test-vector-3-multi-compone">
+<a href="#appendix-B.3" class="section-number selfRef">B.3. </a><a href="#name-test-vector-3-multi-compone" class="section-name selfRef">Test Vector 3: Multi-Component Path</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-B.3-1">
+<pre>
+Input: "https://cdn.example.com/videos/2025/03/file.mp4"
+Output: "https://hxUM2N3txwYjGxjvCpWn30SznxR0v0fDbkSQgCTXCUu7Rq8iSbWP4
+         0OvYxKs9zC3kw1JNzAc4Wuj7RZvRd0VUprJWLs5KJPnWsA9Kguxa_J7XviTS3G
+         Tqf-XZdPxYyq1Y1MXVE9_4ojHwm6jBDUkVthAkuNe5Cqk_h6d"
+</pre><a href="#appendix-B.3-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="test-vector-4-root-with-scheme">
+<section id="appendix-B.4">
+        <h3 id="name-test-vector-4-root-with-sch">
+<a href="#appendix-B.4" class="section-number selfRef">B.4. </a><a href="#name-test-vector-4-root-with-sch" class="section-name selfRef">Test Vector 4: Root with Scheme</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-B.4-1">
+<pre>
+Input: "https://example.com/"
+Output: "https://HOGo9vauZ3b3xsPNPQng5apSzL5V7QW94C7USgN8"
+</pre><a href="#appendix-B.4-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="test-vector-5-simple-path">
+<section id="appendix-B.5">
+        <h3 id="name-test-vector-5-simple-path">
+<a href="#appendix-B.5" class="section-number selfRef">B.5. </a><a href="#name-test-vector-5-simple-path" class="section-name selfRef">Test Vector 5: Simple Path</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-B.5-1">
+<pre>
+Input: "/path/to/resource"
+Output: "/b9bCOhqZsvU9XxGOMk6d8QFQPTuMlsQKDBhAbc77JvsdRj0kxiFipunATQmm
+         CkNhAe0BPP2EqQoxORElY_ukfUYSrr9mIMfiO9joa3Kn5RS7eSKr"
+</pre><a href="#appendix-B.5-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="test-vector-6-uri-with-query-parameters">
+<section id="appendix-B.6">
+        <h3 id="name-test-vector-6-uri-with-quer">
+<a href="#appendix-B.6" class="section-number selfRef">B.6. </a><a href="#name-test-vector-6-uri-with-quer" class="section-name selfRef">Test Vector 6: URI with Query Parameters</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-B.6-1">
+<pre>
+Input: "https://example.com/search?q=test&amp;limit=10"
+Output: "https://HOGo9vauZ3b3xsPNPQng5apSzL5V7QW94C7USgN8cl2BBtuWmxTsI
+         Ij59ka3KeDsaqXFGnKgW9aLLR36YvUf9ORkMnVE5PTR_3DiO43hL9WjdSu7L9
+         FN"
+</pre><a href="#appendix-B.6-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="test-vector-7-uri-with-fragment">
+<section id="appendix-B.7">
+        <h3 id="name-test-vector-7-uri-with-frag">
+<a href="#appendix-B.7" class="section-number selfRef">B.7. </a><a href="#name-test-vector-7-uri-with-frag" class="section-name selfRef">Test Vector 7: URI with Fragment</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-B.7-1">
+<pre>
+Input: "https://docs.example.com/guide#installation"
+Output: "https://ypHTiw0JUMcr4bUjQH9Dxo8wGWHyfFlLq8VrOE-zX6IbgLFxYX_Jm
+         2hzivywvrpIBWa-9Jl6nSZLq2pd35QwkDsc1-_Kao2BvyBB19ndu1PpwQv1wy
+         uA"
+</pre><a href="#appendix-B.7-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="test-vector-8-uri-with-query-and-fragment">
+<section id="appendix-B.8">
+        <h3 id="name-test-vector-8-uri-with-quer">
+<a href="#appendix-B.8" class="section-number selfRef">B.8. </a><a href="#name-test-vector-8-uri-with-quer" class="section-name selfRef">Test Vector 8: URI with Query and Fragment</a>
+        </h3>
+<div class="alignLeft art-text artwork" id="appendix-B.8-1">
+<pre>
+Input: "/api/v2/users?id=123#profile"
+Output: "/b9bCOhqZsvU9XxGOMk6d8QFQwcP2C3bJVNVZDge7zfub_ai4x6LaUlXp-XjZ
+         XOgZlLloIbasK-JKlbeKeKV2rctq5bX9zQh1KogN2zaggTMZioUb4kwGIKp8Z
+         y744xQwGDG64n6GhN56XEM8LvBfJuEj6ZgsjeLbTPIMbCmO0pJhzVSh"
+</pre><a href="#appendix-B.8-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="appendix-C">
+      <h2 id="name-authors-address">
+<a href="#name-authors-address" class="section-name selfRef">Author's Address</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Frank Denis</span></div>
+<div dir="auto" class="left"><span class="org">Fastly Inc.</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:fde@00f.net" class="email">fde@00f.net</a>
+</div>
+</address>
+</section>
+</div>
+<script>const toc = document.getElementById("toc");
+toc.querySelector("h2").addEventListener("click", e => {
+  toc.classList.toggle("active");
+});
+toc.querySelector("nav").addEventListener("click", e => {
+  toc.classList.remove("active");
+});
+</script>
+</body>
+</html>
