@@ -2022,36 +2022,36 @@ the algorithms:<a href="#section-5-1" class="pilcrow">¶</a></p>
             <p id="section-5.1-4.4.1">For each component:<a href="#section-5.1-4.4.1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.1-4.4.2.1">
-                <p id="section-5.1-4.4.2.1.1">Update <code>components_xof</code> with <code>component</code>.<a href="#section-5.1-4.4.2.1.1" class="pilcrow">¶</a></p>
+                <p id="section-5.1-4.4.2.1.1">Update <code>components_xof</code> with <code>component</code><a href="#section-5.1-4.4.2.1.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.1-4.4.2.2">
-                <p id="section-5.1-4.4.2.2.1"><code>SIV = components_xof.clone().read(SIVLEN)</code>.<a href="#section-5.1-4.4.2.2.1" class="pilcrow">¶</a></p>
+                <p id="section-5.1-4.4.2.2.1"><code>SIV = components_xof.clone().read(SIVLEN)</code><a href="#section-5.1-4.4.2.2.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.1-4.4.2.3">
-                <p id="section-5.1-4.4.2.3.1"><code>keystream_xof = base_keystream_xof.clone()</code>.<a href="#section-5.1-4.4.2.3.1" class="pilcrow">¶</a></p>
+                <p id="section-5.1-4.4.2.3.1"><code>keystream_xof = base_keystream_xof.clone()</code><a href="#section-5.1-4.4.2.3.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.1-4.4.2.4">
-                <p id="section-5.1-4.4.2.4.1"><code>keystream_xof.update(SIV)</code>.<a href="#section-5.1-4.4.2.4.1" class="pilcrow">¶</a></p>
+                <p id="section-5.1-4.4.2.4.1"><code>keystream_xof.update(SIV)</code><a href="#section-5.1-4.4.2.4.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.1-4.4.2.5">
-                <p id="section-5.1-4.4.2.5.1"><code>padding_len = (PADBS - (SIVLEN + len(component)) % PADBS) % PADBS</code>.<a href="#section-5.1-4.4.2.5.1" class="pilcrow">¶</a></p>
+                <p id="section-5.1-4.4.2.5.1"><code>padding_len = (PADBS - (SIVLEN + len(component)) % PADBS) % PADBS</code><a href="#section-5.1-4.4.2.5.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.1-4.4.2.6">
-                <p id="section-5.1-4.4.2.6.1"><code>keystream = keystream_xof.read(len(component) + padding_len)</code>.<a href="#section-5.1-4.4.2.6.1" class="pilcrow">¶</a></p>
+                <p id="section-5.1-4.4.2.6.1"><code>keystream = keystream_xof.read(len(component) + padding_len)</code><a href="#section-5.1-4.4.2.6.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.1-4.4.2.7">
-                <p id="section-5.1-4.4.2.7.1"><code>padded_component = component concatenated with zeros(padding_len)</code>.<a href="#section-5.1-4.4.2.7.1" class="pilcrow">¶</a></p>
+                <p id="section-5.1-4.4.2.7.1"><code>padded_component = component concatenated with zeros(padding_len)</code><a href="#section-5.1-4.4.2.7.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.1-4.4.2.8">
-                <p id="section-5.1-4.4.2.8.1"><code>encrypted_part = padded_component XOR keystream</code>.<a href="#section-5.1-4.4.2.8.1" class="pilcrow">¶</a></p>
+                <p id="section-5.1-4.4.2.8.1"><code>encrypted_part = padded_component XOR keystream</code><a href="#section-5.1-4.4.2.8.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.1-4.4.2.9">
-                <p id="section-5.1-4.4.2.9.1"><code>encrypted_output = encrypted_output concatenated with SIV concatenated with encrypted_part</code>.<a href="#section-5.1-4.4.2.9.1" class="pilcrow">¶</a></p>
+                <p id="section-5.1-4.4.2.9.1"><code>encrypted_output = encrypted_output concatenated with SIV concatenated with encrypted_part</code><a href="#section-5.1-4.4.2.9.1" class="pilcrow">¶</a></p>
 </li>
             </ul>
 </li>
           <li id="section-5.1-4.5">
-            <p id="section-5.1-4.5.1"><code>base64_output = base64url_encode(encrypted_output)</code>.<a href="#section-5.1-4.5.1" class="pilcrow">¶</a></p>
+            <p id="section-5.1-4.5.1"><code>base64_output = base64url_encode(encrypted_output)</code><a href="#section-5.1-4.5.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-5.1-4.6">
             <p id="section-5.1-4.6.1">If scheme is not empty: Return <code>scheme + base64_output</code><a href="#section-5.1-4.6.1" class="pilcrow">¶</a></p>
@@ -2081,7 +2081,7 @@ the algorithms:<a href="#section-5-1" class="pilcrow">¶</a></p>
             <p id="section-5.2-5.1.1">Split encrypted URI into scheme and base64 part<a href="#section-5.2-5.1.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-5.2-5.2">
-            <p id="section-5.2-5.2.1"><code>decoded = base64url_decode(base64_part)</code>. If decoding fails, return <code>error</code>.<a href="#section-5.2-5.2.1" class="pilcrow">¶</a></p>
+            <p id="section-5.2-5.2.1"><code>decoded = base64url_decode(base64_part)</code> If decoding fails, return <code>error</code><a href="#section-5.2-5.2.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-5.2-5.3">
             <p id="section-5.2-5.3.1">Initialize XOF instances as described in <a href="#xof-init" class="auto internal xref">Section 4.1</a><a href="#section-5.2-5.3.1" class="pilcrow">¶</a></p>
@@ -2096,13 +2096,13 @@ the algorithms:<a href="#section-5-1" class="pilcrow">¶</a></p>
             <p id="section-5.2-5.6.1">While <code>position &lt; len(decoded)</code>:<a href="#section-5.2-5.6.1" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-5.2-5.6.2.1">
-                <p id="section-5.2-5.6.2.1.1"><code>SIV = decoded[position:position+SIVLEN]</code>. If not enough bytes, return <code>error</code>.<a href="#section-5.2-5.6.2.1.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.1.1"><code>SIV = decoded[position:position+SIVLEN]</code> If not enough bytes, return <code>error</code><a href="#section-5.2-5.6.2.1.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-5.6.2.2">
-                <p id="section-5.2-5.6.2.2.1"><code>keystream_xof = base_keystream_xof.clone()</code>.<a href="#section-5.2-5.6.2.2.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.2.1"><code>keystream_xof = base_keystream_xof.clone()</code><a href="#section-5.2-5.6.2.2.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-5.6.2.3">
-                <p id="section-5.2-5.6.2.3.1"><code>keystream_xof.update(SIV)</code>.<a href="#section-5.2-5.6.2.3.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.3.1"><code>keystream_xof.update(SIV)</code><a href="#section-5.2-5.6.2.3.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-5.6.2.4">
                 <p id="section-5.2-5.6.2.4.1"><code>component_start = position + SIVLEN</code><a href="#section-5.2-5.6.2.4.1" class="pilcrow">¶</a></p>
@@ -2145,21 +2145,21 @@ the algorithms:<a href="#section-5-1" class="pilcrow">¶</a></p>
                 </ul>
 </li>
               <li class="normal" id="section-5.2-5.6.2.8">
-                <p id="section-5.2-5.6.2.8.1">Update <code>components_xof</code> with <code>component</code>.<a href="#section-5.2-5.6.2.8.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.8.1">Update <code>components_xof</code> with <code>component</code><a href="#section-5.2-5.6.2.8.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-5.6.2.9">
-                <p id="section-5.2-5.6.2.9.1"><code>expected_SIV = components_xof.clone().read(SIVLEN)</code>.<a href="#section-5.2-5.6.2.9.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.9.1"><code>expected_SIV = components_xof.clone().read(SIVLEN)</code><a href="#section-5.2-5.6.2.9.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-5.6.2.10">
-                <p id="section-5.2-5.6.2.10.1">If <code>constant_time_compare(SIV, expected_SIV) == false</code>, return <code>error</code>.<a href="#section-5.2-5.6.2.10.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.10.1">If <code>constant_time_compare(SIV, expected_SIV) == false</code>, return <code>error</code><a href="#section-5.2-5.6.2.10.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-5.6.2.11">
-                <p id="section-5.2-5.6.2.11.1"><code>decrypted_components.append(component)</code>.<a href="#section-5.2-5.6.2.11.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.11.1"><code>decrypted_components.append(component)</code><a href="#section-5.2-5.6.2.11.1" class="pilcrow">¶</a></p>
 </li>
             </ul>
 </li>
           <li id="section-5.2-5.7">
-            <p id="section-5.2-5.7.1"><code>decrypted_path = join(decrypted_components)</code>.<a href="#section-5.2-5.7.1" class="pilcrow">¶</a></p>
+            <p id="section-5.2-5.7.1"><code>decrypted_path = join(decrypted_components)</code><a href="#section-5.2-5.7.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-5.2-5.8">
             <p id="section-5.2-5.8.1">Return <code>scheme + decrypted_path</code><a href="#section-5.2-5.8.1" class="pilcrow">¶</a></p>

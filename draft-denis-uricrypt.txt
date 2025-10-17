@@ -707,28 +707,28 @@ Table of Contents
 
    4.  For each component:
 
-       *  Update components_xof with component.
+       *  Update components_xof with component
 
-       *  SIV = components_xof.clone().read(SIVLEN).
+       *  SIV = components_xof.clone().read(SIVLEN)
 
-       *  keystream_xof = base_keystream_xof.clone().
+       *  keystream_xof = base_keystream_xof.clone()
 
-       *  keystream_xof.update(SIV).
+       *  keystream_xof.update(SIV)
 
        *  padding_len = (PADBS - (SIVLEN + len(component)) % PADBS) %
-          PADBS.
+          PADBS
 
-       *  keystream = keystream_xof.read(len(component) + padding_len).
+       *  keystream = keystream_xof.read(len(component) + padding_len)
 
        *  padded_component = component concatenated with
-          zeros(padding_len).
+          zeros(padding_len)
 
-       *  encrypted_part = padded_component XOR keystream.
+       *  encrypted_part = padded_component XOR keystream
 
        *  encrypted_output = encrypted_output concatenated with SIV
-          concatenated with encrypted_part.
+          concatenated with encrypted_part
 
-   5.  base64_output = base64url_encode(encrypted_output).
+   5.  base64_output = base64url_encode(encrypted_output)
 
    6.  If scheme is not empty: Return scheme + base64_output
 
@@ -751,8 +751,8 @@ Table of Contents
 
    1.  Split encrypted URI into scheme and base64 part
 
-   2.  decoded = base64url_decode(base64_part).  If decoding fails,
-       return error.
+   2.  decoded = base64url_decode(base64_part) If decoding fails, return
+       error
 
    3.  Initialize XOF instances as described in Section 4.1
 
@@ -762,12 +762,12 @@ Table of Contents
 
    6.  While position < len(decoded):
 
-       *  SIV = decoded[position:position+SIVLEN].  If not enough bytes,
-          return error.
+       *  SIV = decoded[position:position+SIVLEN] If not enough bytes,
+          return error
 
-       *  keystream_xof = base_keystream_xof.clone().
+       *  keystream_xof = base_keystream_xof.clone()
 
-       *  keystream_xof.update(SIV).
+       *  keystream_xof.update(SIV)
 
        *  component_start = position + SIVLEN
 
@@ -795,16 +795,16 @@ Table of Contents
 
              o  Break inner loop
 
-       *  Update components_xof with component.
+       *  Update components_xof with component
 
-       *  expected_SIV = components_xof.clone().read(SIVLEN).
+       *  expected_SIV = components_xof.clone().read(SIVLEN)
 
        *  If constant_time_compare(SIV, expected_SIV) == false, return
-          error.
+          error
 
-       *  decrypted_components.append(component).
+       *  decrypted_components.append(component)
 
-   7.  decrypted_path = join(decrypted_components).
+   7.  decrypted_path = join(decrypted_components)
 
    8.  Return scheme + decrypted_path
 
