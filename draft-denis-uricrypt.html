@@ -2099,59 +2099,62 @@ the algorithms:<a href="#section-5-1" class="pilcrow">¶</a></p>
                 <p id="section-5.2-5.6.2.1.1"><code>SIV = decoded[position:position+SIVLEN]</code>. If not enough bytes, return <code>error</code>.<a href="#section-5.2-5.6.2.1.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-5.6.2.2">
-                <p id="section-5.2-5.6.2.2.1"><code>keystream_xof = base_keystream_xof.clone().update(SIV)</code>.<a href="#section-5.2-5.6.2.2.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.2.1"><code>keystream_xof = base_keystream_xof.clone()</code>.<a href="#section-5.2-5.6.2.2.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-5.6.2.3">
-                <p id="section-5.2-5.6.2.3.1"><code>component_start = position + SIVLEN</code><a href="#section-5.2-5.6.2.3.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.3.1"><code>keystream_xof.update(SIV)</code>.<a href="#section-5.2-5.6.2.3.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-5.6.2.4">
-                <p id="section-5.2-5.6.2.4.1"><code>component = empty byte array</code><a href="#section-5.2-5.6.2.4.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.4.1"><code>component_start = position + SIVLEN</code><a href="#section-5.2-5.6.2.4.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-5.6.2.5">
-                <p id="section-5.2-5.6.2.5.1"><code>position = position + SIVLEN</code><a href="#section-5.2-5.6.2.5.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.5.1"><code>component = empty byte array</code><a href="#section-5.2-5.6.2.5.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-5.6.2.6">
-                <p id="section-5.2-5.6.2.6.1">While <code>position &lt; len(decoded)</code>:<a href="#section-5.2-5.6.2.6.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.6.1"><code>position = position + SIVLEN</code><a href="#section-5.2-5.6.2.6.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.2-5.6.2.7">
+                <p id="section-5.2-5.6.2.7.1">While <code>position &lt; len(decoded)</code>:<a href="#section-5.2-5.6.2.7.1" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-5.2-5.6.2.6.2.1">
-                    <p id="section-5.2-5.6.2.6.2.1.1"><code>decrypted_byte = decoded[position] XOR keystream_xof.read(1)</code><a href="#section-5.2-5.6.2.6.2.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-5.2-5.6.2.7.2.1">
+                    <p id="section-5.2-5.6.2.7.2.1.1"><code>decrypted_byte = decoded[position] XOR keystream_xof.read(1)</code><a href="#section-5.2-5.6.2.7.2.1.1" class="pilcrow">¶</a></p>
 </li>
-                  <li class="normal" id="section-5.2-5.6.2.6.2.2">
-                    <p id="section-5.2-5.6.2.6.2.2.1"><code>position = position + 1</code><a href="#section-5.2-5.6.2.6.2.2.1" class="pilcrow">¶</a></p>
+                  <li class="normal" id="section-5.2-5.6.2.7.2.2">
+                    <p id="section-5.2-5.6.2.7.2.2.1"><code>position = position + 1</code><a href="#section-5.2-5.6.2.7.2.2.1" class="pilcrow">¶</a></p>
 </li>
-                  <li class="normal" id="section-5.2-5.6.2.6.2.3">
-                    <p id="section-5.2-5.6.2.6.2.3.1">If <code>decrypted_byte == 0x00</code>: continue (skip padding)<a href="#section-5.2-5.6.2.6.2.3.1" class="pilcrow">¶</a></p>
+                  <li class="normal" id="section-5.2-5.6.2.7.2.3">
+                    <p id="section-5.2-5.6.2.7.2.3.1">If <code>decrypted_byte == 0x00</code>: continue (skip padding)<a href="#section-5.2-5.6.2.7.2.3.1" class="pilcrow">¶</a></p>
 </li>
-                  <li class="normal" id="section-5.2-5.6.2.6.2.4">
-                    <p id="section-5.2-5.6.2.6.2.4.1"><code>component.append(decrypted_byte)</code><a href="#section-5.2-5.6.2.6.2.4.1" class="pilcrow">¶</a></p>
+                  <li class="normal" id="section-5.2-5.6.2.7.2.4">
+                    <p id="section-5.2-5.6.2.7.2.4.1"><code>component.append(decrypted_byte)</code><a href="#section-5.2-5.6.2.7.2.4.1" class="pilcrow">¶</a></p>
 </li>
-                  <li class="normal" id="section-5.2-5.6.2.6.2.5">
-                    <p id="section-5.2-5.6.2.6.2.5.1">If <code>decrypted_byte</code> is <code>'/'</code>, <code>'?'</code>, or <code>'#'</code>:<a href="#section-5.2-5.6.2.6.2.5.1" class="pilcrow">¶</a></p>
+                  <li class="normal" id="section-5.2-5.6.2.7.2.5">
+                    <p id="section-5.2-5.6.2.7.2.5.1">If <code>decrypted_byte</code> is <code>'/'</code>, <code>'?'</code>, or <code>'#'</code>:<a href="#section-5.2-5.6.2.7.2.5.1" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-5.2-5.6.2.6.2.5.2.1">
-                        <p id="section-5.2-5.6.2.6.2.5.2.1.1"><code>total_len = position - component_start</code><a href="#section-5.2-5.6.2.6.2.5.2.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-5.2-5.6.2.7.2.5.2.1">
+                        <p id="section-5.2-5.6.2.7.2.5.2.1.1"><code>total_len = position - component_start</code><a href="#section-5.2-5.6.2.7.2.5.2.1.1" class="pilcrow">¶</a></p>
 </li>
-                      <li class="normal" id="section-5.2-5.6.2.6.2.5.2.2">
-                        <p id="section-5.2-5.6.2.6.2.5.2.2.1"><code>position = position + ((PADBS - ((SIVLEN + total_len) % PADBS)) % PADBS)</code><a href="#section-5.2-5.6.2.6.2.5.2.2.1" class="pilcrow">¶</a></p>
+                      <li class="normal" id="section-5.2-5.6.2.7.2.5.2.2">
+                        <p id="section-5.2-5.6.2.7.2.5.2.2.1"><code>position = position + ((PADBS - ((SIVLEN + total_len) % PADBS)) % PADBS)</code><a href="#section-5.2-5.6.2.7.2.5.2.2.1" class="pilcrow">¶</a></p>
 </li>
-                      <li class="normal" id="section-5.2-5.6.2.6.2.5.2.3">
-                        <p id="section-5.2-5.6.2.6.2.5.2.3.1">Break inner loop<a href="#section-5.2-5.6.2.6.2.5.2.3.1" class="pilcrow">¶</a></p>
+                      <li class="normal" id="section-5.2-5.6.2.7.2.5.2.3">
+                        <p id="section-5.2-5.6.2.7.2.5.2.3.1">Break inner loop<a href="#section-5.2-5.6.2.7.2.5.2.3.1" class="pilcrow">¶</a></p>
 </li>
                     </ul>
 </li>
                 </ul>
 </li>
-              <li class="normal" id="section-5.2-5.6.2.7">
-                <p id="section-5.2-5.6.2.7.1">Update <code>components_xof</code> with <code>component</code>.<a href="#section-5.2-5.6.2.7.1" class="pilcrow">¶</a></p>
-</li>
               <li class="normal" id="section-5.2-5.6.2.8">
-                <p id="section-5.2-5.6.2.8.1"><code>expected_SIV = components_xof.clone().read(SIVLEN)</code>.<a href="#section-5.2-5.6.2.8.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.8.1">Update <code>components_xof</code> with <code>component</code>.<a href="#section-5.2-5.6.2.8.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-5.6.2.9">
-                <p id="section-5.2-5.6.2.9.1">If <code>constant_time_compare(SIV, expected_SIV) == false</code>, return <code>error</code>.<a href="#section-5.2-5.6.2.9.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.9.1"><code>expected_SIV = components_xof.clone().read(SIVLEN)</code>.<a href="#section-5.2-5.6.2.9.1" class="pilcrow">¶</a></p>
 </li>
               <li class="normal" id="section-5.2-5.6.2.10">
-                <p id="section-5.2-5.6.2.10.1"><code>decrypted_components.append(component)</code>.<a href="#section-5.2-5.6.2.10.1" class="pilcrow">¶</a></p>
+                <p id="section-5.2-5.6.2.10.1">If <code>constant_time_compare(SIV, expected_SIV) == false</code>, return <code>error</code>.<a href="#section-5.2-5.6.2.10.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-5.2-5.6.2.11">
+                <p id="section-5.2-5.6.2.11.1"><code>decrypted_components.append(component)</code>.<a href="#section-5.2-5.6.2.11.1" class="pilcrow">¶</a></p>
 </li>
             </ul>
 </li>
