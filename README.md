@@ -12,7 +12,7 @@ This is the working area for the individual Internet-Draft, "Prefix-Preserving E
 ## Known Implementations
 
 * [zig-uricrypt](https://github.com/jedisct1/zig-uricrypt) an URICrypt implementation in Zig
-* [uricrypt.rs](https://github.com/jedisct1/rust-uricrypt) an URICrypt implementaiton in Rust
+* [uricrypt.rs](https://github.com/jedisct1/rust-uricrypt) an URICrypt implementation in Rust
 * [uricrypt.js](https://github.com/jedisct1/uricrypt.js) an URICrypt implementation in JavaScript (TypeScript)
 * [d-uricrypt](https://github.com/kassane/d-uricrypt) an URICrypt implementation in D
 
