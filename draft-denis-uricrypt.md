@@ -268,7 +268,7 @@ consistently with other paths.
 In applications where all paths are guaranteed to be absolute and the `'/'` path
 can be considered a special case, ciphertext expansion can be reduced by
 removing the leading `'/'` character from the URI prior to encryption,
-making the path relative with `'/'` as an implicit current path.
+treating the path as relative with `'/'` as implicit.
 
 ## Component Reconstruction
 
@@ -498,7 +498,7 @@ During decryption, component boundaries are discovered dynamically by examining 
 - Each component (except possibly the last) ends with a terminator character (`'/'`, `'?'`, or `'#'`)
 - When a terminator is encountered, we know the component is complete
 - After finding the terminator, we skip padding bytes to align to the next PADBS-byte boundary.
-- The padding length can be calculated: `padding = (PADBS - ((SIV_size + bytes_read) % PADBS)) % PADBS`
+- The padding length can be calculated: `padding = (PADBS - ((SIVLEN + bytes_read) % PADBS)) % PADBS`
 
 This approach eliminates the need for explicit length encoding, as the component structure itself provides the necessary boundary information.
 
