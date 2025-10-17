@@ -571,17 +571,17 @@ Steps:
 2.  Initialize XOF instances as described in {{xof-init}}
 3.  `encrypted_output = empty byte array`
 4.  For each component:
-      - Update `components_xof` with `component`.
-      - `SIV = components_xof.clone().read(SIVLEN)`.
-      - `keystream_xof = base_keystream_xof.clone()`.
-      - `keystream_xof.update(SIV)`.
-      - `padding_len = (PADBS - (SIVLEN + len(component)) % PADBS) % PADBS`.
-      - `keystream = keystream_xof.read(len(component) + padding_len)`.
-      - `padded_component = component concatenated with zeros(padding_len)`.
-      - `encrypted_part = padded_component XOR keystream`.
-      - `encrypted_output = encrypted_output concatenated with SIV concatenated with encrypted_part`.
+      - Update `components_xof` with `component`
+      - `SIV = components_xof.clone().read(SIVLEN)`
+      - `keystream_xof = base_keystream_xof.clone()`
+      - `keystream_xof.update(SIV)`
+      - `padding_len = (PADBS - (SIVLEN + len(component)) % PADBS) % PADBS`
+      - `keystream = keystream_xof.read(len(component) + padding_len)`
+      - `padded_component = component concatenated with zeros(padding_len)`
+      - `encrypted_part = padded_component XOR keystream`
+      - `encrypted_output = encrypted_output concatenated with SIV concatenated with encrypted_part`
 
-5.  `base64_output = base64url_encode(encrypted_output)`.
+5.  `base64_output = base64url_encode(encrypted_output)`
 6.  If scheme is not empty: Return `scheme + base64_output`
 7.  Else if original URI started with '/': Return `'/' + base64_output`
 8.  Else: Return `base64_output`
@@ -599,14 +599,14 @@ Note: For path-only URIs (those starting with '/'), the output format is:
 Steps:
 
 1.  Split encrypted URI into scheme and base64 part
-2.  `decoded = base64url_decode(base64_part)`. If decoding fails, return `error`.
+2.  `decoded = base64url_decode(base64_part)` If decoding fails, return `error`
 3.  Initialize XOF instances as described in {{xof-init}}
 4.  `decrypted_components = empty list`
 5.  `position = 0`
 6.  While `position < len(decoded)`:
-      - `SIV = decoded[position:position+SIVLEN]`. If not enough bytes, return `error`.
-      - `keystream_xof = base_keystream_xof.clone()`.
-      - `keystream_xof.update(SIV)`.
+      - `SIV = decoded[position:position+SIVLEN]` If not enough bytes, return `error`
+      - `keystream_xof = base_keystream_xof.clone()`
+      - `keystream_xof.update(SIV)`
       - `component_start = position + SIVLEN`
       - `component = empty byte array`
       - `position = position + SIVLEN`
@@ -619,12 +619,12 @@ Steps:
           - `total_len = position - component_start`
           - `position = position + ((PADBS - ((SIVLEN + total_len) % PADBS)) % PADBS)`
           - Break inner loop
-      - Update `components_xof` with `component`.
-      - `expected_SIV = components_xof.clone().read(SIVLEN)`.
-      - If `constant_time_compare(SIV, expected_SIV) == false`, return `error`.
-      - `decrypted_components.append(component)`.
+      - Update `components_xof` with `component`
+      - `expected_SIV = components_xof.clone().read(SIVLEN)`
+      - If `constant_time_compare(SIV, expected_SIV) == false`, return `error`
+      - `decrypted_components.append(component)`
 
-7.  `decrypted_path = join(decrypted_components)`.
+7.  `decrypted_path = join(decrypted_components)`
 8.  Return `scheme + decrypted_path`
 
 # Implementation Details
