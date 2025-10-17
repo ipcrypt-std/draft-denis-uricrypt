@@ -594,7 +594,7 @@ Output: decrypted_uri or error
 
 Note: For path-only URIs (those starting with '/'), the output format is:
 - '/' followed by the base64url-encoded encrypted components
-- This preserves the absolute path indicator in the encrypted form or error
+- This preserves the absolute path indicator in the encrypted form
 
 Steps:
 
@@ -938,6 +938,10 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
   if encrypted_uri contains "://":
      scheme = substring up to and including "://"
      base64_part = substring after "://"
+  else if encrypted_uri starts with "/":
+     // Path-only URI: strip leading "/" before decoding
+     scheme = ""
+     base64_part = substring after first "/"
   else:
      scheme = ""
      base64_part = encrypted_uri
@@ -967,33 +971,33 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      keystream_xof = base_keystream_xof.clone()
      keystream_xof.update(siv)
 
-     // Determine component length by checking padding constraints
-     remaining = input_stream.remaining()
-     if remaining == 0:
-        return error("Decryption failed")
+     // Decrypt byte-by-byte to find component boundary
+     component = byte_array()
+     component_start = input_stream.position()
 
-     // Find valid component length by checking padding alignment
-     component_data = None
-     for possible_len in range(1, remaining + 1):
-        total_len = SIVLEN + possible_len
-        padding_len = (PADBS - total_len % PADBS) % PADBS
-        if possible_len >= padding_len:
-           component_data = input_stream.peek(possible_len)
+     while not input_stream.empty():
+        // Decrypt one byte
+        encrypted_byte = input_stream.read(1)
+        if len(encrypted_byte) != 1:
+           return error("Decryption failed")
+
+        keystream_byte = keystream_xof.squeeze(1)
+        decrypted_byte = xor_bytes(encrypted_byte, keystream_byte)[0]
+
+        // Skip padding (null bytes)
+        if decrypted_byte == 0x00:
+           continue
+
+        // Add to component
+        component.append(decrypted_byte)
+
+        // Check for terminator
+        if decrypted_byte == '/' or decrypted_byte == '?' or decrypted_byte == '#':
+           // Component complete - skip remaining padding
+           total_len = input_stream.position() - component_start
+           padding_len = (PADBS - ((SIVLEN + total_len) % PADBS)) % PADBS
+           input_stream.skip(padding_len)
            break
-
-     if component_data is None:
-        return error("Decryption failed")
-
-     // Read encrypted data
-     encrypted_part = input_stream.read(len(component_data))
-
-     // Generate keystream and decrypt
-     keystream = keystream_xof.squeeze(len(encrypted_part))
-     padded_plaintext = xor_bytes(encrypted_part, keystream)
-
-     // Remove padding bytes added for base64 alignment
-     padding_len = (PADBS - (SIVLEN + len(encrypted_part)) % PADBS) % PADBS
-     component = padded_plaintext[:-padding_len] if padding_len > 0 else padded_plaintext
 
      // Update XOF with plaintext
      components_xof.update(component)
@@ -1008,13 +1012,8 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      decrypted_components.append(component)
 
   // Reconstruct URI
-  if scheme and decrypted_components:
-     path = "".join(decrypted_components)
-     return scheme + path
-  elif decrypted_components:
-     return "/" + "".join(decrypted_components)
-  else:
-     return ""
+  path = "".join(decrypted_components)
+  return scheme + path
 ~~~
 
 ## Padding and Encoding
