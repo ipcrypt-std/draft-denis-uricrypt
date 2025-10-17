@@ -605,7 +605,8 @@ Steps:
 5.  `position = 0`
 6.  While `position < len(decoded)`:
       - `SIV = decoded[position:position+SIVLEN]`. If not enough bytes, return `error`.
-      - `keystream_xof = base_keystream_xof.clone().update(SIV)`.
+      - `keystream_xof = base_keystream_xof.clone()`.
+      - `keystream_xof.update(SIV)`.
       - `component_start = position + SIVLEN`
       - `component = empty byte array`
       - `position = position + SIVLEN`
