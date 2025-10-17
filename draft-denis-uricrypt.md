@@ -590,7 +590,7 @@ Steps:
 
 Input: secret_key, context, encrypted_uri
 
-Output: encrypted_uri
+Output: decrypted_uri or error
 
 Note: For path-only URIs (those starting with '/'), the output format is:
 - '/' followed by the base64url-encoded encrypted components
@@ -892,7 +892,7 @@ function uricrypt_encrypt(secret_key, context, uri_string):
      components_xof.update(component)
 
      // Generate SIVLEN-byte Synthetic Initialization Vector (SIV)
-     siv = components_xof.squeeze(SIVLEN)
+     siv = components_xof.clone().squeeze(SIVLEN)
 
      // Create keystream XOF for this component
      keystream_xof = base_keystream_xof.clone()
@@ -998,7 +998,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
      components_xof.update(component)
 
      // Generate expected SIV
-     expected_siv = components_xof.squeeze(SIVLEN)
+     expected_siv = components_xof.clone().squeeze(SIVLEN)
 
      // Authenticate using constant-time comparison to prevent timing attacks
      if not constant_time_equal(siv, expected_siv):
@@ -1024,7 +1024,7 @@ function calculate_padding(component_len):
   // The combined SIV (SIVLEN bytes) + component must be divisible by PADBS
   // for clean base64 encoding without '=' padding characters
   total_len = SIVLEN + component_len
-  return (3 - total_len % 3) % 3
+  return (PADBS - total_len % PADBS) % PADBS
 
 function base64_urlsafe_no_pad_encode(data):
   // Use standard base64 encoding
