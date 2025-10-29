@@ -525,6 +525,21 @@ the exact original component size.
 The final output is encoded using URL-safe base64 {{!RFC4648}}, with '-' replacing
 '+' and '_' replacing '/' for URI compatibility.
 
+Note: Encrypted URIs may contain slash characters ('/') at arbitrary locations
+in the base64-encoded ciphertext portion (i.e., after the scheme for full URIs,
+or after the leading '/' for path-only URIs). These slashes may or may not
+correspond to the original URI structure and serve aesthetic or structural
+purposes only. They are not part of the encrypted data. During decryption, all
+slashes within the ciphertext must be removed before base64 decoding.
+
+For example, these are equivalent encrypted representations:
+- `https://ABC123def456GHI789`
+- `https://ABC123/def456/GHI789`
+- `https://ABC/123/def/456/GHI/789`
+
+All three would be decoded identically by removing slashes to produce
+`ABC123def456GHI789` before base64 decoding.
+
 # Algorithm Specification
 
 This section provides the complete algorithms for encryption and
@@ -599,11 +614,12 @@ Note: For path-only URIs (those starting with '/'), the output format is:
 Steps:
 
 1.  Split encrypted URI into scheme and base64 part
-2.  `decoded = base64url_decode(base64_part)` If decoding fails, return `error`
-3.  Initialize XOF instances as described in {{xof-init}}
-4.  `decrypted_components = empty list`
-5.  `position = 0`
-6.  While `position < len(decoded)`:
+2.  Remove all slash characters ('/') from the base64 part (the encrypted ciphertext after the scheme). These slashes may appear at arbitrary locations for aesthetic or structural purposes but are not part of the encrypted data.
+3.  `decoded = base64url_decode(base64_part)` If decoding fails, return `error`
+4.  Initialize XOF instances as described in {{xof-init}}
+5.  `decrypted_components = empty list`
+6.  `position = 0`
+7.  While `position < len(decoded)`:
       - `SIV = decoded[position:position+SIVLEN]` If not enough bytes, return `error`
       - `keystream_xof = base_keystream_xof.clone()`
       - `keystream_xof.update(SIV)`
@@ -624,8 +640,8 @@ Steps:
       - If `constant_time_compare(SIV, expected_SIV) == false`, return `error`
       - `decrypted_components.append(component)`
 
-7.  `decrypted_path = join(decrypted_components)`
-8.  Return `scheme + decrypted_path`
+8.  `decrypted_path = join(decrypted_components)`
+9.  Return `scheme + decrypted_path`
 
 # Implementation Details
 
@@ -945,6 +961,11 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
   else:
      scheme = ""
      base64_part = encrypted_uri
+
+  // Remove all slashes from the base64 part (the encrypted ciphertext)
+  // Slashes may appear at arbitrary locations after the scheme for
+  // aesthetic/structural purposes, but are not part of the encrypted data
+  base64_part = base64_part.replace("/", "")
 
   // Decode base64
   try:
