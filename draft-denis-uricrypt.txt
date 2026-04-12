@@ -4,8 +4,8 @@
 
 Network Working Group                                           F. Denis
 Internet-Draft                                               Fastly Inc.
-Intended status: Informational                           29 October 2025
-Expires: 2 May 2026
+Intended status: Informational                             12 April 2025
+Expires: 14 October 2025
 
 
                  Prefix-Preserving Encryption for URIs
@@ -43,7 +43,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 2 May 2026.
+   This Internet-Draft will expire on 14 October 2025.
 
 Copyright Notice
 
@@ -155,7 +155,7 @@ Table of Contents
       infrastructure, URICrypt can isolate tenant data while allowing
       shared components to be processed efficiently.
 
-   *  Privacy-preserving Analytics: URICrypt can complement IPCrypt
+   *  Privacy-Preserving Analytics: URICrypt can complement IPCrypt
       [I-D.draft-denis-ipcrypt].  Together, they enable systems to
       perform analytics on encrypted network flows and resource access
       patterns without exposing sensitive information about either the
@@ -335,7 +335,7 @@ Table of Contents
    This character receives its own SIV and is encrypted, ensuring that
    the root path is authenticated like any other path component and that
    different keys and contexts produce different ciphertexts for that
-   path, consistently with other paths.
+   path, consistent with other paths.
 
    In applications where all paths are guaranteed to be absolute and the
    '/' path can be considered a special case, ciphertext expansion can
@@ -1076,9 +1076,9 @@ Normative References
    [I-D.draft-denis-ipcrypt]
               Denis, F., "Methods for IP Address Encryption and
               Obfuscation", Work in Progress, Internet-Draft, draft-
-              denis-ipcrypt-12, 19 September 2025,
+              denis-ipcrypt-13, 15 March 2026,
               <https://datatracker.ietf.org/doc/html/draft-denis-
-              ipcrypt-12>.
+              ipcrypt-13>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
