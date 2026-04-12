@@ -73,7 +73,7 @@ The main motivations include:
   infrastructure, URICrypt can isolate tenant data while allowing
   shared components to be processed efficiently.
 
-* Privacy-preserving Analytics: URICrypt can complement IPCrypt
+* Privacy-Preserving Analytics: URICrypt can complement IPCrypt
   {{!I-D.draft-denis-ipcrypt}}. Together, they enable systems to perform
   analytics on encrypted network flows and resource access patterns
   without exposing sensitive information about either the network
@@ -263,7 +263,7 @@ consistency and enable proper prefix preservation for absolute paths.
 This character receives its own SIV and is encrypted, ensuring that the
 root path is authenticated like any other path component and that
 different keys and contexts produce different ciphertexts for that path,
-consistently with other paths.
+consistent with other paths.
 
 In applications where all paths are guaranteed to be absolute and the `'/'` path
 can be considered a special case, ciphertext expansion can be reduced by
