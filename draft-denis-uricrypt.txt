@@ -4,8 +4,8 @@
 
 Network Working Group                                           F. Denis
 Internet-Draft                                               Fastly Inc.
-Intended status: Informational                             12 April 2026
-Expires: 14 October 2026
+Intended status: Informational                         14 September 2026
+Expires: 18 March 2027
 
 
                  Prefix-Preserving Encryption for URIs
@@ -43,7 +43,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 14 October 2026.
+   This Internet-Draft will expire on 18 March 2027.
 
 Copyright Notice
 
@@ -1074,11 +1074,11 @@ Acknowledgments
 Normative References
 
    [I-D.draft-denis-ipcrypt]
-              Denis, F., "Methods for IP Address Encryption and
-              Obfuscation", Work in Progress, Internet-Draft, draft-
-              denis-ipcrypt-13, 15 March 2026,
+              Barber, C. and F. Denis, "Methods for IP Address
+              Encryption and Obfuscation", Work in Progress, Internet-
+              Draft, draft-denis-ipcrypt-14, 24 August 2026,
               <https://datatracker.ietf.org/doc/html/draft-denis-
-              ipcrypt-13>.
+              ipcrypt-14>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -1224,121 +1224,121 @@ A.3.  Encryption Algorithm
 
 A.4.  Decryption Algorithm
 
-function uricrypt_decrypt(secret_key, context, encrypted_uri):
-  // Split scheme and base64
-  if encrypted_uri contains "://":
-     scheme = substring up to and including "://"
-     base64_part = substring after "://"
-  else if encrypted_uri starts with "/":
-     // Path-only URI: strip leading "/" before decoding
-     scheme = ""
-     base64_part = substring after first "/"
-  else:
-     scheme = ""
-     base64_part = encrypted_uri
+   function uricrypt_decrypt(secret_key, context, encrypted_uri):
+     // Split scheme and base64
+     if encrypted_uri contains "://":
+        scheme = substring up to and including "://"
+        base64_part = substring after "://"
+     else if encrypted_uri starts with "/":
+        // Path-only URI: strip leading "/" before decoding
+        scheme = ""
+        base64_part = substring after first "/"
+     else:
+        scheme = ""
+        base64_part = encrypted_uri
 
-  // Remove all slashes from the base64 part (the encrypted ciphertext)
-  // Slashes may appear at arbitrary locations after the scheme for
-  // aesthetic/structural purposes, but are not part of the encrypted data
-  base64_part = base64_part.replace("/", "")
+     // Remove all slashes from the base64 part (the encrypted ciphertext)
+     // Slashes may appear at arbitrary locations after the scheme for
+     // aesthetic/structural purposes, but are not part of the encrypted data
+     base64_part = base64_part.replace("/", "")
 
-  // Decode base64
-  try:
-     decoded = base64_urlsafe_no_pad_decode(base64_part)
-  catch:
-     return error("Decryption failed")
-
-  // Initialize XOF instances with secret key and context
-  (components_xof, base_keystream_xof) =
-      initialize_xofs(secret_key, context)
-  if error: return error
-
-  decrypted_components = []
-  input_stream = ByteStream(decoded)
-
-  // Process each component
-  while not input_stream.empty():
-     // Read SIV
-     siv = input_stream.read(SIVLEN)
-     if len(siv) != SIVLEN:
+     // Decode base64
+     try:
+        decoded = base64_urlsafe_no_pad_decode(base64_part)
+     catch:
         return error("Decryption failed")
 
-     // Create keystream XOF
-     keystream_xof = base_keystream_xof.clone()
-     keystream_xof.update(siv)
+     // Initialize XOF instances with secret key and context
+     (components_xof, base_keystream_xof) =
+         initialize_xofs(secret_key, context)
+     if error: return error
 
-     // Decrypt byte-by-byte to find component boundary
-     component = byte_array()
-     component_start = input_stream.position()
+     decrypted_components = []
+     input_stream = ByteStream(decoded)
 
+     // Process each component
      while not input_stream.empty():
-        // Decrypt one byte
-        encrypted_byte = input_stream.read(1)
-        if len(encrypted_byte) != 1:
+        // Read SIV
+        siv = input_stream.read(SIVLEN)
+        if len(siv) != SIVLEN:
            return error("Decryption failed")
 
-        keystream_byte = keystream_xof.squeeze(1)
-        decrypted_byte = xor_bytes(encrypted_byte, keystream_byte)[0]
+        // Create keystream XOF
+        keystream_xof = base_keystream_xof.clone()
+        keystream_xof.update(siv)
 
-        // Skip padding (null bytes)
-        if decrypted_byte == 0x00:
-           continue
+        // Decrypt byte-by-byte to find component boundary
+        component = byte_array()
+        component_start = input_stream.position()
 
-        // Add to component
-        component.append(decrypted_byte)
+        while not input_stream.empty():
+           // Decrypt one byte
+           encrypted_byte = input_stream.read(1)
+           if len(encrypted_byte) != 1:
+              return error("Decryption failed")
 
-        // Check for terminator
-        if decrypted_byte == '/' or decrypted_byte == '?' or decrypted_byte == '#':
-           // Component complete - skip remaining padding
-           total_len = input_stream.position() - component_start
-           padding_len = (PADBS - ((SIVLEN + total_len) % PADBS)) % PADBS
-           input_stream.skip(padding_len)
-           break
+           keystream_byte = keystream_xof.squeeze(1)
+           decrypted_byte = xor_bytes(encrypted_byte, keystream_byte)[0]
 
-     // Update XOF with plaintext
-     components_xof.update(component)
+           // Skip padding (null bytes)
+           if decrypted_byte == 0x00:
+              continue
 
-     // Generate expected SIV
-     expected_siv = components_xof.clone().squeeze(SIVLEN)
+           // Add to component
+           component.append(decrypted_byte)
 
-     // Authenticate using constant-time comparison to prevent timing attacks
-     if not constant_time_equal(siv, expected_siv):
-        return error("Decryption failed")
+           // Check for terminator
+           if decrypted_byte == '/' or decrypted_byte == '?' or decrypted_byte == '#':
+              // Component complete - skip remaining padding
+              total_len = input_stream.position() - component_start
+              padding_len = (PADBS - ((SIVLEN + total_len) % PADBS)) % PADBS
+              input_stream.skip(padding_len)
+              break
 
-     decrypted_components.append(component)
+        // Update XOF with plaintext
+        components_xof.update(component)
 
-  // Reconstruct URI
-  path = "".join(decrypted_components)
-  return scheme + path
+        // Generate expected SIV
+        expected_siv = components_xof.clone().squeeze(SIVLEN)
+
+        // Authenticate using constant-time comparison to prevent timing attacks
+        if not constant_time_equal(siv, expected_siv):
+           return error("Decryption failed")
+
+        decrypted_components.append(component)
+
+     // Reconstruct URI
+     path = "".join(decrypted_components)
+     return scheme + path
 
 A.5.  Padding and Encoding
 
-function calculate_padding(component_len):
-  // Calculate padding needed for base64 encoding alignment
-  // The combined SIV (SIVLEN bytes) + component must be divisible by PADBS
-  // for clean base64 encoding without '=' padding characters
-  total_len = SIVLEN + component_len
-  return (PADBS - total_len % PADBS) % PADBS
+   function calculate_padding(component_len):
+     // Calculate padding needed for base64 encoding alignment
+     // The combined SIV (SIVLEN bytes) + component must be divisible by PADBS
+     // for clean base64 encoding without '=' padding characters
+     total_len = SIVLEN + component_len
+     return (PADBS - total_len % PADBS) % PADBS
 
-function base64_urlsafe_no_pad_encode(data):
-  // Use standard base64 encoding
-  encoded = standard_base64_encode(data)
-  // Make URL-safe and remove padding for URI compatibility
-  encoded = encoded.replace('+', '-')
-                   .replace('/', '_')
-                   .rstrip('=')
-  return encoded
+   function base64_urlsafe_no_pad_encode(data):
+     // Use standard base64 encoding
+     encoded = standard_base64_encode(data)
+     // Make URL-safe and remove padding for URI compatibility
+     encoded = encoded.replace('+', '-')
+                      .replace('/', '_')
+                      .rstrip('=')
+     return encoded
 
-function base64_urlsafe_no_pad_decode(encoded):
-  // Add padding if needed for standard decoder
-  padding = (4 - len(encoded) % 4) % 4
-  if padding > 0:
-     encoded = encoded + ('=' * padding)
-  // Make standard base64
-  encoded = encoded.replace('-', '+')
-                   .replace('_', '/')
-  // Decode
-  return standard_base64_decode(encoded)
+   function base64_urlsafe_no_pad_decode(encoded):
+     // Add padding if needed for standard decoder
+     padding = (4 - len(encoded) % 4) % 4
+     if padding > 0:
+        encoded = encoded + ('=' * padding)
+     // Make standard base64
+     encoded = encoded.replace('-', '+')
+                      .replace('_', '/')
+     // Decode
+     return standard_base64_decode(encoded)
 
 Appendix B.  Test Vectors
 
