@@ -459,7 +459,7 @@ The padding ensures clean base64url encoding without padding characters. Since
 base64 encoding works with groups of 3 bytes (producing 4 characters), we pad each
 `(SIV || encrypted_component)` pair to have a length that's a multiple of PADBS:
 
-~~~
+~~~ pseudocode
 total_bytes = SIVLEN (SIV) + component_len
 padding_len = (PADBS - total_bytes % PADBS) % PADBS
 ~~~
@@ -672,7 +672,7 @@ cross-application attacks. The context string MAY be empty.
 Both key and context are length-prefixed when absorbed into the base
 XOF:
 
-~~~
+~~~ pseudocode
 base_xof.update(len(secret_key) as uint8)
 base_xof.update(secret_key)
 base_xof.update(len(context) as uint8)
@@ -830,7 +830,7 @@ The author would like to thank Maciej Soltysiak for highlighting the importance 
 
 ## URI Component Extraction
 
-~~~
+~~~ pseudocode
 function extract_components(uri_string):
   if uri_string contains "://":
      scheme = substring up to and including "://"
@@ -867,7 +867,7 @@ function find_next_terminator(path):
 
 ## XOF Initialization
 
-~~~
+~~~ pseudocode
 function initialize_xofs(secret_key, context):
   // Initialize base XOF
   base_xof = TurboSHAKE128(0x1F)
@@ -891,7 +891,7 @@ function initialize_xofs(secret_key, context):
 
 ## Encryption Algorithm
 
-~~~
+~~~ pseudocode
 function uricrypt_encrypt(secret_key, context, uri_string):
   // Extract components
   (scheme, components) = extract_components(uri_string)
@@ -948,7 +948,7 @@ function uricrypt_encrypt(secret_key, context, uri_string):
 
 ## Decryption Algorithm
 
-~~~
+~~~ pseudocode
 function uricrypt_decrypt(secret_key, context, encrypted_uri):
   // Split scheme and base64
   if encrypted_uri contains "://":
@@ -1039,7 +1039,7 @@ function uricrypt_decrypt(secret_key, context, encrypted_uri):
 
 ## Padding and Encoding
 
-~~~
+~~~ pseudocode
 function calculate_padding(component_len):
   // Calculate padding needed for base64 encoding alignment
   // The combined SIV (SIVLEN bytes) + component must be divisible by PADBS
